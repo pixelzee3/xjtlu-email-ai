@@ -8,6 +8,7 @@
 - 📄 **正文提取** — 自动点击并提取10封邮件全文
 - 🤖 **AI 总结** — 调用 LLM（支持 OpenAI / DeepSeek 等 API）生成智能摘要
 - 🌐 **Web 界面** — 基于 FastAPI 的浏览器操作界面
+- ⚙️ **可视化配置** — 网页端支持图形化配置 API、Cookie，使用零门槛 🎉
 - 🍪 **Cookie 登录** — 支持 OWA 双因素认证环境
 
 ## 💡 技术挑战 (Core Challenges)
@@ -36,7 +37,16 @@ playwright install msedge
 
 ### 2. 配置
 
-复制模板并填入你的信息：
+现在您可以通过 **Web 界面直接进行可视化配置**，极低门槛！
+
+#### 💡 方案 A：Web 可视化配置 (推荐)
+1. 跳到 **4. 启动** 章节，直接运行并在浏览器打开程序。
+2. 点击页面右上角的 **“⚙️ 设置/配置”**。
+3. 在弹窗中录入您的 AI 密钥、Base URL 和 Cookie（剪切板 JSON 粘贴）。
+4. **高级设置** 中可自定义邮箱的 OWA 链接。保存即刻生效。
+
+#### 方案 B：手动编辑配置文件 (传统方式)
+若无法使用网页版，可复制模板并填入信息：
 
 ```bash
 cp src/config.example.json src/config.json
@@ -53,9 +63,7 @@ cp src/config.example.json src/config.json
   },
   "email": {
     "url": "https://mail.xjtlu.edu.cn/owa",
-    "login_type": "cookie",
-    "username": "",
-    "password": ""
+    "login_type": "cookie"
   }
 }
 ```

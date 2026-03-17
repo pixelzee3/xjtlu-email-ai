@@ -693,6 +693,103 @@
             color: var(--text-primary);
         }
 
+        /* ====== Settings Modal Form Styles ====== */
+        .settings-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .settings-form textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-family: 'Fira Code', monospace;
+            background: var(--bg-input);
+            color: var(--text-primary);
+            transition: all var(--transition);
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .settings-form textarea:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px var(--primary-glow);
+            outline: none;
+            background: var(--bg-input-focus);
+        }
+
+        details.advanced-settings {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            transition: all var(--transition);
+        }
+
+        details.advanced-settings summary {
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            user-select: none;
+            outline: none;
+            transition: color var(--transition);
+        }
+
+        details.advanced-settings summary:hover {
+            color: var(--primary);
+        }
+        
+        details.advanced-settings .input-group {
+            margin-top: 16px;
+            margin-bottom: 0;
+        }
+
+        .modal-footer {
+            margin-top: 24px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .btn-secondary {
+            background: var(--bg-hover);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all var(--transition);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border-color);
+            color: var(--text-primary);
+        }
+
+        .btn-save {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: all var(--transition);
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+        }
+        
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+            filter: brightness(1.05);
+        }
+
         .tutorial-section {
             margin-bottom: 24px;
             padding-bottom: 16px;
@@ -906,6 +1003,7 @@
             <button class="icon-btn" id="themeToggle" onclick="toggleTheme()">
                 <span id="themeIcon">🌙</span> <span id="themeLabel">深色模式</span>
             </button>
+            <button class="icon-btn" onclick="openSettingsModal()">⚙️ 设置/配置</button>
             <button class="icon-btn" onclick="openModal()">📚 使用教程</button>
         </div>
         <div id="cookieStatusText" class="cookie-status-text">Cookie 状态：未检查</div>
@@ -1021,6 +1119,49 @@
         </div>
     </div>
 
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <span class="close" onclick="closeSettingsModal()">&times;</span>
+            <h2 class="modal-heading">⚙️ 系统配置</h2>
+            
+            <div class="settings-form">
+                <div class="input-group">
+                    <label for="aiBaseUrl">AI Base URL</label>
+                    <input type="text" id="aiBaseUrl" placeholder="如: https://api.openai.com/v1">
+                </div>
+                
+                <div class="input-group">
+                    <label for="aiApiKey">AI API Key</label>
+                    <input type="text" id="aiApiKey" placeholder="sk-...">
+                </div>
+                
+                <div class="input-group">
+                    <label for="aiModel">AI Model</label>
+                    <input type="text" id="aiModel" placeholder="如: gpt-4o-mini">
+                </div>
+
+                <div class="input-group">
+                    <label for="emailCookies">Email Cookies (JSON Array)</label>
+                    <textarea id="emailCookies" placeholder='[{"name": "...", "value": "...", "domain": "..."}]'></textarea>
+                </div>
+
+                <details class="advanced-settings">
+                    <summary>高级设置</summary>
+                    <div class="input-group">
+                        <label for="emailUrl">邮箱网址 URL</label>
+                        <input type="text" id="emailUrl" placeholder="如: https://mail.xjtlu.edu.cn/owa">
+                    </div>
+                </details>
+                
+                <div class="modal-footer">
+                    <button class="btn-secondary" onclick="closeSettingsModal()">取消</button>
+                    <button class="btn-save" id="saveConfigBtn" onclick="saveConfig()">保存配置</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // ====== 深色模式 (改进一) ======
         function initTheme() {
@@ -1047,8 +1188,66 @@
         // ====== Modal ======
         function openModal() { document.getElementById('tutorialModal').style.display = "block"; }
         function closeModal() { document.getElementById('tutorialModal').style.display = "none"; }
+        
+        async function openSettingsModal() { 
+            document.getElementById('settingsModal').style.display = "block";
+            const btn = document.getElementById('saveConfigBtn');
+            btn.textContent = "加载中...";
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/config');
+                const conf = await res.json();
+                document.getElementById('aiBaseUrl').value = conf.ai_base_url || '';
+                document.getElementById('aiApiKey').value = conf.ai_api_key || '';
+                document.getElementById('aiModel').value = conf.ai_model || 'gpt-4o-mini';
+                document.getElementById('emailUrl').value = conf.email_url || 'https://mail.xjtlu.edu.cn/owa';
+                document.getElementById('emailCookies').value = conf.email_cookies || '';
+            } catch (e) {
+                alert("无法加载配置: " + e.message);
+            } finally {
+                btn.textContent = "保存配置";
+                btn.disabled = false;
+            }
+        }
+        function closeSettingsModal() { document.getElementById('settingsModal').style.display = "none"; }
+
+        async function saveConfig() {
+            const btn = document.getElementById('saveConfigBtn');
+            btn.textContent = "保存中...";
+            btn.disabled = true;
+            
+            const payload = {
+                ai_base_url: document.getElementById('aiBaseUrl').value,
+                ai_api_key: document.getElementById('aiApiKey').value,
+                ai_model: document.getElementById('aiModel').value,
+                email_url: document.getElementById('emailUrl').value,
+                email_cookies: document.getElementById('emailCookies').value
+            };
+            
+            try {
+                const res = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if(data.status === 'success') {
+                    alert('✅ 配置保存成功！');
+                    closeSettingsModal();
+                } else {
+                    alert('❌ 保存失败: ' + data.message);
+                }
+            } catch (e) {
+                alert('❌ 发生错误: ' + e.message);
+            } finally {
+                btn.textContent = "保存配置";
+                btn.disabled = false;
+            }
+        }
+
         window.onclick = function (event) {
             if (event.target === document.getElementById('tutorialModal')) closeModal();
+            if (event.target === document.getElementById('settingsModal')) closeSettingsModal();
         };
 
         // ====== 搜索历史 (改进三) ======

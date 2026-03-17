@@ -88,6 +88,14 @@ class ExecuteRequest(BaseModel):
     keyword: str
     instruction: str
 
+class ConfigUpdateRequest(BaseModel):
+    ai_base_url: str
+    ai_api_key: str
+    ai_model: str
+    email_url: str
+    email_cookies: str
+
+
 
 def load_cookies_for_check(email_config: dict) -> list:
     """Load cookies from config JSON array and optional Netscape cookie file."""
@@ -174,6 +182,90 @@ async def get_status():
         "extracted_count": state.extracted_count,
         "total_count": state.total_count,
     }
+
+@app.get("/api/config")
+async def get_config():
+    """获取当前配置供前端显示"""
+    # 重新加载以确保最新
+    config_path = Path("config.json")
+    if not config_path.exists():
+        config_path = Path(__file__).parent / "config.json"
+    
+    current_config = load_config(config_path)
+    
+    # 将 cookie list 转成带格式的 JSON 字符串供前端多行文本框显示
+    cookies_list = current_config.get("email", {}).get("cookies", [])
+    cookies_str = json.dumps(cookies_list, indent=2, ensure_ascii=False) if cookies_list else ""
+    
+    return {
+        "ai_base_url": current_config.get("ai", {}).get("base_url", ""),
+        "ai_api_key": current_config.get("ai", {}).get("api_key", ""),
+        "ai_model": current_config.get("ai", {}).get("model", "gpt-4o-mini"),
+        "email_url": current_config.get("email", {}).get("url", "https://mail.xjtlu.edu.cn/owa"),
+        "email_cookies": cookies_str
+    }
+
+@app.post("/api/config")
+async def update_config(req: ConfigUpdateRequest):
+    """保存用户在前端修改的配置"""
+    config_path = Path("config.json")
+    if not config_path.exists():
+        config_path = Path(__file__).parent / "config.json"
+        
+    current_config = load_config(config_path)
+    
+    # 尝试解析 cookies 字符串
+    cookies_list = []
+    if req.email_cookies.strip():
+        try:
+            parsed = json.loads(req.email_cookies)
+            if isinstance(parsed, list):
+                cookies_list = parsed
+            else:
+                return JSONResponse(status_code=400, content={"status": "error", "message": "Cookies 必须是一个 JSON 数组。"})
+        except json.JSONDecodeError:
+            return JSONResponse(status_code=400, content={"status": "error", "message": "Cookies JSON 格式不正确。"})
+
+    # 更新 AI 配置
+    if "ai" not in current_config:
+        current_config["ai"] = {}
+    current_config["ai"]["base_url"] = req.ai_base_url.strip()
+    current_config["ai"]["api_key"] = req.ai_api_key.strip()
+    current_config["ai"]["model"] = req.ai_model.strip()
+
+    # 更新 Email 配置
+    if "email" not in current_config:
+        current_config["email"] = {}
+    current_config["email"]["url"] = req.email_url.strip()
+    # 确保 login_type 是 cookie
+    current_config["email"]["login_type"] = "cookie"
+    current_config["email"]["cookies"] = cookies_list
+
+    # 写回文件
+    try:
+        with open(config_path, "w", encoding="utf-8") as f:
+            json.dump(current_config, f, indent=4, ensure_ascii=False)
+        
+        # 更新内存态
+        state.config = current_config
+        
+        # 保存设置后，最好清理一下之前的浏览器状态，以便下次执行时重新初始化应用新配置
+        if state.context:
+            await state.context.close()
+        if state.browser:
+            await state.browser.close()
+        if state.playwright:
+            await state.playwright.stop()
+        state.context = None
+        state.browser = None
+        state.playwright = None
+        state.page = None
+            
+        return {"status": "success", "message": "配置已保存。"}
+    except Exception as e:
+        logger.error(f"Failed to save config: {e}")
+        return JSONResponse(status_code=500, content={"status": "error", "message": f"保存配置时出错: {e}"})
+
 
 @app.post("/api/check_cookie")
 async def check_cookie():

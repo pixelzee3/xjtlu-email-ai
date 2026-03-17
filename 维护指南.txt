@@ -30,8 +30,8 @@
 
 ### 1. 更新 Cookie (最常见维护项)
 由于 XJTLU 登录通常有双因素认证（MFA），本项目采用 **Cookie 注入** 的方式绕过登录。如果程序提示“无法定位搜索框”，通常是 Cookie 过期了。
-- 使用浏览器插件（如 "Cookie-Editor"）以 **JSON 格式**（Export as JSON）导出邮件系统的 Cookie。
-- 粘贴到 `src/config.json` 中的 `cookies` 数组字段，或者保存为 `src/cookies.txt` 并在 config 中配置。
+- **推荐做法**：启动 Web 界面后，点击右上角 **“⚙️ 设置/配置”**，直接将导出的 JSON 粘贴到 Cookie 输入框中保存（最快且容错率高）。
+- **手动方式**：粘贴到 `src/config.json` 中的 `cookies` 数组字段，或者保存为 `src/cookies.txt`。
 
 ### 2. 维护 CSS 选择器
 如果 Outlook 网页版更新了 UI，导致无法搜到邮件或提取正文：
