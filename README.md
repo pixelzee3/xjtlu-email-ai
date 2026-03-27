@@ -10,6 +10,8 @@
 - 🌐 **Web 界面** — 基于 FastAPI 的浏览器操作界面
 - ⚙️ **可视化配置** — 网页端支持图形化配置 API、Cookie，使用零门槛 🎉
 - 🍪 **Cookie 登录** — 支持 OWA 双因素认证环境
+- 🚀 **上线自动检 Cookie 一次** — **首次打开首页**后，后台会用**无头浏览器**自动执行一次与「检查 Cookie」相同的检测（与预启动可见浏览器无关）；结果在首页状态与 `GET /api/status` 的 `auto_cookie_*` 字段；未配置 Cookie 则跳过
+- 🖥️ **可选预启动 Edge** — 在设置中开启「浏览器预启动」且当前账号已保存 Cookie 后，登录/打开首页会按**当前账号**预启动可见浏览器（不附带 Cookie 预检测）
 
 ## 💡 技术挑战 (Core Challenges)
 
@@ -81,12 +83,21 @@ cp src/config.example.json src/config.json
 
 **命令行**：
 ```bash
-# Web 界面模式
-python src/app.py
-# 然后访问 http://localhost:8001
+cd src
+python app.py
+# 然后访问 http://localhost:8001，先登录再使用主界面
+```
 
-# 命令行模式
-python src/main.py
+首次启动会在 `src/user.db`（SQLite）中创建本地账号库；**邮箱为唯一账号**，密码使用 bcrypt 存储。若存在旧的 `src/config.json`，会在创建首个种子用户时**自动导入到该用户**的配置中（每人独立一份配置，不再共用单一 `config.json`）。
+
+在浏览器中可 **注册** 新账号，或使用已有账号 **登录**。会话 Cookie 由服务端签名，生产环境请设置环境变量 `SESSION_SECRET`。
+
+> **安全提示**：请勿在公开场合泄露密码；若曾在聊天/代码中暴露过密码，请尽快在数据库中更新或删除对应用户后重新注册。
+
+**命令行模式（无 Web 登录）**：
+```bash
+cd src
+python main.py
 ```
 
 ---

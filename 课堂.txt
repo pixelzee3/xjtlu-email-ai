@@ -1,0 +1,29 @@
+Section 1 — The Problem
+Why does this matter? Who is affected, and how often? Do not mention your product or solution in this section. (100–150 words)
+XJTLU students and alumni receive a massive volume of university service emails daily, including event notifications, internship opportunities, administrative notices, and course updates. Currently, individuals have to manually sift through cluttered inboxes, leading to a high risk of missing tight deadlines (like tuition payments, exam registrations) or valuable opportunities. Existing email clients only offer basic search and chronological sorting, providing no intelligent summarization or priority highlighting. This forces students to waste significant time reading irrelevant, lengthy email threads or rely on word-of-mouth in WeChat groups, which is often delayed and unreliable. The manual workaround is inefficient and frustrating for anyone trying to stay organized.
+
+Section 2 — Target Users
+Who exactly are you building for? Describe a real type of person, not a demographic category. (60–100 words)
+The primary users are busy XJTLU juniors, seniors, and recent alumni. For example, a junior student balancing a heavy coursework load, club activities, and internship hunting. They care deeply about efficiency and tracking deadlines, but they are easily overwhelmed by their inbox. They want to know exactly "who, what, when, and where" at a glance without reading long operational emails. They don’t use existing solutions because standard email apps lack context-aware AI extraction tailored specifically to university or alumni announcements.
+
+Section 3 — The Solution
+What are you building, and what does it do for the user? Write from the user’s perspective. No technology stack details. (100–150 words)
+We are building a smart email assistant that seamlessly connects to the user's university inbox, automatically categorizes incoming messages, and generates concise, actionable summaries. The core feature is an automated daily or weekly digest that extracts only the critical items and deadlines from chaotic email threads. This solves the information overload problem by providing users with a clean, readable dashboard of what truly matters in their university life. Instead of opening 20 unread emails, the user simply reads a one-page summary that highlights which activities to join, what forms to fill out, and what deadlines are approaching today.
+
+Key Features
+3–5 features in plain language. One line each. This is a starting point, not a commitment.
+•	One-click secure email connection without complicated technical configuration.
+•	Smart auto-categorization of emails (e.g., Activities, Recruitment, Courses, Alumni Notices).
+•	Daily and Weekly Digest generation summarizing the most important unread emails.
+•	Automated extraction and alert highlighting for critical deadlines and events.
+•	Personalized preference settings to filter summaries by topics of interest (e.g., only "Internships").
+
+Section 4 — Success Metrics
+How will you know if your product is actually working? 3–5 specific, measurable outcomes you can test. (50–100 words)
+•	Usability Metric: Time taken for a new user to successfully complete the first email connection and view their first summary dashboard.
+•	Adoption/Retention Metric: Percentage of users who return to check their email digest at least twice a month after the initial setup.
+•	Testable Metric: Task success rate during user testing when asked to configure personalized topic preferences (e.g., turning on only "Recruitment" updates).
+
+Development Log Link
+Paste your SharePoint Dev Log link here before submitting. Set sharing to “Anyone at XJTLU with the link can view and comment.”
+Development Log (SharePoint): [paste your link here]

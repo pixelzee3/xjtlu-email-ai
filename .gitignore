@@ -2,6 +2,8 @@
 src/config.json
 .env
 src/cookies*.txt
+cookies_mail*.txt
+src/user.db
 
 # ====== Python Cache ======
 __pycache__/
@@ -13,6 +15,9 @@ venv/
 # ====== Debug Artifacts ======
 debug_*.png
 *.log
+src/dev_extract_bodies_*.txt
+src/dev_extract_bodies_ALL.json
+src/deep_scan_result.json
 
 # ====== OS ======
 .DS_Store

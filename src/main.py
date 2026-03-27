@@ -4,12 +4,681 @@ import asyncio
 import json
 import os
 import re
+from typing import Optional
 
 import requests
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
 from datetime import datetime
+from calendar import month_abbr
+
+_LIST_ITEM_SELECTOR = 'div[role="option"][data-convid], ._lvv_w[data-convid], [data-convid]'
+
+_SCROLL_OWA_LIST_STEP_JS = """({ containerFraction, minDelta }) => {
+    const cf = Number(containerFraction) || 0.88;
+    const md = Number(minDelta) || 80;
+    const nodes = document.querySelectorAll('[data-convid]');
+    const n = nodes.length;
+    if (!n) {
+        window.scrollBy(0, Math.floor(window.innerHeight * Math.min(0.85, cf)));
+        return { mode: "window", n: 0 };
+    }
+    const idx = Math.min(Math.floor(n / 2), n - 1);
+    const opt = nodes[idx];
+    let el = opt;
+    while (el && el !== document.documentElement) {
+        const st = window.getComputedStyle(el);
+        const oy = st.overflowY;
+        if ((oy === "auto" || oy === "scroll" || oy === "overlay") && el.scrollHeight > el.clientHeight + 8) {
+            const delta = Math.max(md, Math.floor(el.clientHeight * cf));
+            const next = Math.min(el.scrollTop + delta, el.scrollHeight - el.clientHeight);
+            el.scrollTop = next;
+            return { mode: "container", n: n };
+        }
+        el = el.parentElement;
+    }
+    window.scrollBy(0, Math.floor(window.innerHeight * Math.min(0.85, cf)));
+    return { mode: "window-fallback", n: n };
+}"""
+
+_OWA_SCROLL_READING_PANE_BODY_JS = """() => {
+    const visible = (el) =>
+        el &&
+        el.offsetParent !== null &&
+        el.getClientRects &&
+        el.getClientRects().length > 0;
+    const READING_ROOT_SELS = [
+        '[id*="ReadingPane"]',
+        '[id*="readingPane"]',
+        '[class*="ReadingPane"]',
+        '[class*="readingPane"]',
+        '[data-app-section="MessageReading"]',
+        '[aria-label*="Reading Pane" i]',
+        '[aria-label*="阅读窗格"]',
+    ];
+    const BODY_IN_PANE_SELS = [
+        '[aria-label*="Message body" i]',
+        '[aria-label*="邮件正文"]',
+        'article[role="document"]',
+        'div.AllowTextSelection',
+        'div.gs div.ii',
+        'div.rps_5055',
+    ];
+    const pickBodyEl = () => {
+        for (const rs of READING_ROOT_SELS) {
+            let roots;
+            try {
+                roots = document.querySelectorAll(rs);
+            } catch (e) {
+                continue;
+            }
+            for (const root of roots) {
+                if (!visible(root)) continue;
+                for (const bs of BODY_IN_PANE_SELS) {
+                    try {
+                        const nodes = root.querySelectorAll(bs);
+                        for (const n of nodes) {
+                            if (visible(n)) return n;
+                        }
+                    } catch (e) {}
+                }
+            }
+        }
+        const narrow = [
+            '[aria-label*="Message body" i]',
+            '[aria-label*="邮件正文"]',
+        ];
+        for (const bs of narrow) {
+            try {
+                const nodes = document.querySelectorAll(bs);
+                for (const n of nodes) {
+                    if (visible(n)) return n;
+                }
+            } catch (e) {}
+        }
+        return null;
+    };
+    const el = pickBodyEl();
+    if (!el) return 0;
+    let moved = 0;
+    let w = el;
+    for (let depth = 0; depth < 28 && w; depth++) {
+        const st = window.getComputedStyle(w);
+        const oy = st.overflowY;
+        if (
+            (oy === "auto" || oy === "scroll" || oy === "overlay") &&
+            w.scrollHeight > w.clientHeight + 8
+        ) {
+            const before = w.scrollTop;
+            w.scrollTop = w.scrollHeight;
+            moved += Math.abs(w.scrollTop - before);
+        }
+        w = w.parentElement;
+    }
+    try {
+        el.focus({ preventScroll: true });
+    } catch (e) {}
+    return moved;
+}"""
+
+_RESET_OWA_LIST_SCROLL_JS = """() => {
+    const nodes = document.querySelectorAll('[data-convid]');
+    if (!nodes.length) {
+        window.scrollTo(0, 0);
+        return;
+    }
+    const opt = nodes[0];
+    let el = opt;
+    while (el && el !== document.documentElement) {
+        const st = window.getComputedStyle(el);
+        const oy = st.overflowY;
+        if ((oy === "auto" || oy === "scroll" || oy === "overlay") && el.scrollHeight > el.clientHeight + 8) {
+            el.scrollTop = 0;
+            return;
+        }
+        el = el.parentElement;
+    }
+    window.scrollTo(0, 0);
+}"""
+
+
+async def _scroll_owa_mail_list_step(
+    frame,
+    *,
+    container_fraction: float = 0.88,
+    min_delta: int = 100,
+) -> dict:
+    """在含邮件列表的 frame 内滚动可滚动父容器；OWA 虚拟列表不随主 window 滚动加载。"""
+    try:
+        return await frame.evaluate(
+            _SCROLL_OWA_LIST_STEP_JS,
+            {"containerFraction": container_fraction, "minDelta": min_delta},
+        )
+    except Exception as exc:
+        return {"mode": "error", "err": str(exc)[:120]}
+
+
+async def _reset_owa_mail_list_scroll(frame) -> None:
+    """将邮件列表滚动容器回到顶部，避免长时间下滚后 DOM 第一项不是收件箱第一封。"""
+    try:
+        await frame.evaluate(_RESET_OWA_LIST_SCROLL_JS)
+    except Exception:
+        pass
+
+
+def _line_looks_like_clock_time(line: str) -> bool:
+    s = (line or "").strip()
+    if len(s) > 32:
+        return False
+    if re.match(r"^\d{1,2}:\d{2}(\s*[APap][Mm])?$", s):
+        return True
+    if re.match(r"^(上午|下午|晚上|中午)\s*\d{1,2}:\d{2}", s):
+        return True
+    if re.match(r"^\d{1,2}:\d{2}\s*$", s):
+        return True
+    return False
+
+
+def _extract_date_from_line(line: str) -> str:
+    """返回 YYYY-MM-DD 或空；支持行内子串日期。"""
+    line = (line or "").strip()
+    m = re.search(r"(\d{4})[/-](\d{1,2})[/-](\d{1,2})", line)
+    if m:
+        y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        try:
+            return datetime(y, mo, d).strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+    m2 = re.search(r"(\d{1,2})[/-](\d{1,2})[/-](\d{4})", line)
+    if m2:
+        mo, d, y = int(m2.group(1)), int(m2.group(2)), int(m2.group(3))
+        try:
+            return datetime(y, mo, d).strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+    m3 = re.search(
+        r"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+(\d{1,2}),?\s+(\d{4})",
+        line,
+        re.I,
+    )
+    if m3:
+        mon_s = m3.group(1).title()[:3]
+        try:
+            mo = [x.lower() for x in month_abbr].index(mon_s.lower())
+            d, y = int(m3.group(2)), int(m3.group(3))
+            return datetime(y, mo, d).strftime("%Y-%m-%d")
+        except (ValueError, IndexError):
+            pass
+    return ""
+
+
+def _extract_date_from_line_safe(line: str, *, max_line_len: int = 44) -> str:
+    """
+    长行多为预览正文，其中的数字易被误识别为日期；优先短行，长行仅接受独立日期片段。
+    """
+    line = (line or "").strip()
+    if not line:
+        return ""
+    if len(line) <= max_line_len:
+        return _extract_date_from_line(line)
+    m = re.search(
+        r"(?:^|[\s,;，])(\d{4}[/-]\d{1,2}[/-]\d{1,2})(?:[\s,;，]|$)",
+        line,
+    )
+    if m:
+        return _extract_date_from_line(m.group(1))
+    return ""
+
+
+def _line_likely_owa_sender(line: str) -> bool:
+    """OWA 列表常见：首行发件人，次行主题。"""
+    s = (line or "").strip()
+    if not s:
+        return False
+    if "@" in s:
+        return True
+    if re.search(r"\(\s*via\s+[^)]+\)", s, re.I):
+        return True
+    low = s.lower()
+    if low.startswith(("re:", "fw:", "fwd:", "回复", "转发")) or "【" in s[:6]:
+        return False
+    if len(s) <= 32 and not re.search(r"[。！？!?]", s):
+        return True
+    return False
+
+
+def _line_is_date_or_time_only(line: str) -> bool:
+    s = (line or "").strip()
+    if not s:
+        return True
+    if _line_looks_like_clock_time(s):
+        return True
+    if _extract_date_from_line_safe(s) and len(s) < 28:
+        return True
+    return False
+
+
+def _infer_owa_list_subject(lines: list) -> str:
+    if not lines:
+        return ""
+    if len(lines) == 1:
+        return lines[0]
+    a, b = lines[0], lines[1]
+    lowa = a.lower()
+    if lowa.startswith(("re:", "fw:", "fwd:", "回复", "转发")) or "【" in a[:8]:
+        return a
+    if len(a) > len(b) + 15 and len(a) >= 28:
+        return a
+
+    def _skip_meta(cand: str, idx: int) -> str:
+        if idx + 1 < len(lines) and _line_is_date_or_time_only(cand):
+            return lines[idx + 1]
+        return cand
+
+    if _line_likely_owa_sender(a):
+        return _skip_meta(b, 1)
+    pick = b if len(b) >= len(a) else a
+    if pick == b:
+        return _skip_meta(b, 1)
+    return pick
+
+
+def _infer_sender_and_preview(lines: list, subject: str) -> tuple[str, str]:
+    """从列表行文本推断发件人（首行）与预览（去掉主题/日期后的剩余行）。"""
+    if not lines:
+        return "", ""
+    subj_l = (subject or "").strip().lower()
+    sender = ""
+    if _line_likely_owa_sender(lines[0]):
+        sender = lines[0].strip()
+    elif "@" in lines[0] or re.search(r"\(\s*via\s+[^)]+\)", lines[0], re.I):
+        sender = lines[0].strip()
+    start_idx = 1 if sender else 0
+    prev_parts: list[str] = []
+    for ln in lines[start_idx:]:
+        t = ln.strip()
+        if not t:
+            continue
+        if subj_l:
+            tl = t.lower()
+            if tl == subj_l or (len(t) <= len(subj_l) + 8 and subj_l.startswith(tl)):
+                continue
+        if _line_is_date_or_time_only(t) and len(t) < 36:
+            continue
+        if re.match(r"^(周[一二三四五六日天]\s+\d{1,2}/\d{1,2})$", t):
+            continue
+        prev_parts.append(t)
+        if sum(len(x) for x in prev_parts) > 520:
+            break
+    preview = " ".join(prev_parts)[:500]
+    return sender, preview
+
+
+# 与优先级计划 P2 对齐的规则分类（发件人 + 主题 + 列表预览，无 LLM）
+EMAIL_CATEGORY_LABELS = (
+    "活动",
+    "招聘/实习",
+    "课程/学习",
+    "校友通知",
+    "体育/场馆",
+    "系统/安全",
+    "其他",
+)
+
+
+def classify_email(sender: str, subject: str, preview: str) -> str:
+    """
+    基于关键词/发件人域名的零成本分类；首条命中规则即返回。
+    """
+    sub = (subject or "").strip()
+    pre = (preview or "").strip()
+    snd = (sender or "").strip()
+    blob = f"{snd}\n{sub}\n{pre}".lower()
+
+    def _has(*needles: str) -> bool:
+        return any(n.lower() in blob for n in needles)
+
+    # 系统 / 安全
+    if re.search(r"spam-adm|quarantine|隔离区|unified identity|uim", blob, re.I):
+        return "系统/安全"
+    if _has("mfa", "验证码", "password reset", "login attempt", "abnormal_location"):
+        return "系统/安全"
+    if "pycharm team" in blob and "web actions" in blob:
+        return "系统/安全"
+
+    # 体育 / 场馆
+    if re.search(
+        r"sportscentre|sports centre|pec@|体育馆|健身|场地票|领票",
+        blob,
+        re.I,
+    ):
+        return "体育/场馆"
+
+    # 招聘 / 实习
+    if re.search(
+        r"career|校招|招聘|recruitment|internship|实习|宣讲会|campus talk",
+        blob,
+        re.I,
+    ):
+        return "招聘/实习"
+
+    # 课程 / 学习（LMS、课号）
+    if re.search(r"\(via\s+lm\s+core\)|via lm core", blob, re.I):
+        return "课程/学习"
+    if re.search(
+        r"\b(DTS|ENT|CET|CSE|ACM|DTS\d+|ENT\d+)\d*[A-Z]*[-_]?\d*",
+        sub,
+        re.I,
+    ):
+        return "课程/学习"
+    if _has("forum", "announcements", "assignment", "lecture", "rescheduled"):
+        return "课程/学习"
+
+    # 活动
+    if re.search(
+        r"sa-office|student activity|【student activity】|art centre|workshop invitation|seminar",
+        blob,
+        re.I,
+    ):
+        return "活动"
+    if "【" in sub and ("活动" in sub or "参访" in sub or "企业参访" in sub):
+        return "活动"
+
+    # 校友通知 / 校务通类
+    if re.search(
+        r"universitycommunications|liverpool|studyabroad|library|scc@|notice and events",
+        blob,
+        re.I,
+    ):
+        return "校友通知"
+
+    return "其他"
+
+
+def parse_email_date_for_filter(date_str: str) -> Optional[datetime]:
+    """将列表解析出的日期字符串转为可比较的 datetime（当天 0 点），无法解析则 None。"""
+    if not date_str or not str(date_str).strip():
+        return None
+    d = str(date_str).strip().replace("/", "-")
+    try:
+        parts = d.split("-")
+        if len(parts) == 3:
+            y, mo, day = int(parts[0]), int(parts[1]), int(parts[2])
+            return datetime(y, mo, day)
+    except (ValueError, TypeError):
+        pass
+    if re.search(r"\d{1,2}:\d{2}", d):
+        return datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    return None
+
+
+def _best_date_from_lines(lines: list) -> str:
+    """从底部向上找元数据行上的日期，减少预览正文误匹配。"""
+    if not lines:
+        return ""
+    for line in reversed(lines):
+        got = _extract_date_from_line_safe(line)
+        if got:
+            return got
+    for line in reversed(lines):
+        got = _extract_date_from_line(line)
+        if got and len(line) <= 52:
+            return got
+    for line in reversed(lines):
+        if _line_looks_like_clock_time(line):
+            return datetime.now().strftime("%Y-%m-%d")
+    # 紧凑行：日期只在最后一行片段里且整行较长（如「…3/21/2025」）
+    tail = " ".join(lines[-2:]) if len(lines) >= 2 else lines[-1]
+    if tail and len(tail) <= 200:
+        got = _extract_date_from_line(tail)
+        if got:
+            return got
+    return ""
+
+
+_ROW_DATE_DOM_JS = """(el) => {
+  if (!el) return '';
+  const norm = (y, mo, d) => {
+    const mm = String(mo).padStart(2, '0');
+    const dd = String(d).padStart(2, '0');
+    return y + '-' + mm + '-' + dd;
+  };
+  const t = el.querySelector('time[datetime]');
+  if (t) {
+    const dt = (t.getAttribute('datetime') || '').trim();
+    const m = dt.match(/^(\\d{4})-(\\d{2})-(\\d{2})/);
+    if (m) return m[0];
+    const m2 = dt.match(/(\\d{4})[\\/-](\\d{1,2})[\\/-](\\d{1,2})/);
+    if (m2) return norm(m2[1], m2[2], m2[3]);
+  }
+  let best = '';
+  const attrs = ['datetime', 'title', 'aria-label'];
+  el.querySelectorAll('*').forEach((n) => {
+    for (const a of attrs) {
+      const v = n.getAttribute && n.getAttribute(a);
+      if (!v || v.length < 8) continue;
+      const m = v.match(/(\\d{4})[\\/-](\\d{1,2})[\\/-](\\d{1,2})/);
+      if (m) best = norm(m[1], m[2], m[3]);
+    }
+  });
+  return best;
+}"""
+
+
+async def _dom_date_from_list_row(item) -> str:
+    """OWA 紧凑列表项里日期常在子节点 title/aria-label，不在 inner_text 行里。"""
+    try:
+        raw = await item.evaluate(_ROW_DATE_DOM_JS)
+        s = (raw or "").strip()
+        if len(s) >= 10 and s[4] == "-" and s[7] == "-":
+            return s[:10]
+    except Exception:
+        pass
+    return ""
+
+
+async def _prepare_owa_mail_list_frame(page, keyword: str, config: dict = None):
+    """
+    导航到收件箱或搜索页，返回用于列表解析的 target_frame（与 search_emails 原逻辑一致）。
+    """
+    if keyword:
+        base_url = (config or {}).get("email", {}).get("url", "").rstrip("/")
+        if "#" in base_url:
+            base_url = base_url.split("#")[0].rstrip("/")
+        await page.goto(f"{base_url}/#path=/mail/search", wait_until="domcontentloaded", timeout=30000)
+        await page.wait_for_timeout(2000)
+        print("已跳转到搜索页面")
+    else:
+        base_url = (config or {}).get("email", {}).get("url", "").rstrip("/")
+        if "#" in base_url:
+            base_url = base_url.split("#")[0].rstrip("/")
+        await page.goto(f"{base_url}/#path=/mail", wait_until="domcontentloaded", timeout=30000)
+        await page.wait_for_timeout(2000)
+        print("已跳转到收件箱（无关键词，查看最新邮件）")
+
+    candidate_frames = [page, *page.frames]
+
+    async def pick_best_mail_frame():
+        ranked = []
+        for idx, frame in enumerate(candidate_frames):
+            try:
+                input_count = await frame.locator("input").count()
+                mail_item_count = await frame.locator('[data-convid], div[role="option"][data-convid]').count()
+                frame_url = (getattr(frame, "url", "") or "").lower()
+                score = mail_item_count * 20 + min(input_count, 8)
+                if "mail" in frame_url or "owa" in frame_url or "outlook" in frame_url:
+                    score += 5
+                ranked.append((score, idx, frame, input_count, mail_item_count, frame_url))
+            except Exception:
+                continue
+
+        if not ranked:
+            return page
+
+        ranked.sort(key=lambda item: (item[0], -item[1]), reverse=True)
+        best = ranked[0]
+        print(
+            f"✓ 使用 frame: {best[5][:100] or 'main page'} "
+            f"(score={best[0]}, inputs={best[3]}, mails={best[4]})"
+        )
+        return best[2]
+
+    target_frame = await pick_best_mail_frame()
+
+    if keyword:
+        config_sel = (config or {}).get("selectors", {}).get("search_box")
+        search_box = None
+        search_frame = target_frame
+
+        selector_factories = []
+        if config_sel:
+            selector_factories.append(("配置选择器", lambda frame: frame.locator(config_sel).first))
+        selector_factories.extend([
+            ("role=searchbox", lambda frame: frame.get_by_role("searchbox").first),
+            ("aria-label*=Search", lambda frame: frame.locator('input[aria-label*="Search" i]').first),
+            ("aria-label*=搜索", lambda frame: frame.locator('input[aria-label*="搜索" i]').first),
+            ("placeholder*=Search", lambda frame: frame.locator('input[placeholder*="Search" i]').first),
+            ("placeholder*=搜索", lambda frame: frame.locator('input[placeholder*="搜索" i]').first),
+            ("type=search", lambda frame: frame.locator('input[type="search"]').first),
+            ("name=q", lambda frame: frame.locator('input[name="q"]').first),
+        ])
+
+        frames_to_try = [target_frame] + [f for f in candidate_frames if f is not target_frame]
+        for frame in frames_to_try:
+            for label, factory in selector_factories:
+                try:
+                    loc = factory(frame)
+                    await loc.wait_for(state="visible", timeout=4000)
+                    search_box = loc
+                    search_frame = frame
+                    print(f"✓ 成功定位搜索框（{label}）")
+                    break
+                except Exception:
+                    continue
+            if search_box:
+                break
+
+        if not search_box:
+            print("\n⚠️  无法定位搜索框，可能是 Cookie 已过期，或邮箱页面结构发生变化。")
+            await page.screenshot(path="debug_searchbox_final.png")
+            raise RuntimeError(
+                "无法定位搜索框。可能是 Cookie 已过期，或邮箱页面结构发生变化；已保存 debug_searchbox_final.png 供排查。"
+            )
+
+        await search_box.click()
+        await search_box.fill(keyword)
+        await search_box.press("Enter")
+        await page.wait_for_timeout(1500)
+        target_frame = search_frame
+
+    return target_frame
+
+
+async def _parse_list_item_row(item, config: dict = None) -> Optional[dict]:
+    """从列表项 locator 解析主题、日期、链接；失败或空主题返回 None。"""
+    try:
+        date_str = ""
+        try:
+            if await item.locator("time[datetime]").count() > 0:
+                iso = await item.locator("time[datetime]").first.get_attribute("datetime")
+                if iso and len(iso) >= 10:
+                    date_str = iso[:10].replace("/", "-")
+        except Exception:
+            pass
+
+        if not date_str:
+            date_str = await _dom_date_from_list_row(item)
+
+        sel_date = (config or {}).get("selectors", {}).get("email_date")
+        if not date_str and sel_date:
+            try:
+                dt = await item.locator(sel_date).first.inner_text(timeout=600)
+                if dt and dt.strip():
+                    date_str = _extract_date_from_line(dt.strip()) or _extract_date_from_line_safe(
+                        dt.strip(), max_line_len=80
+                    )
+            except Exception:
+                pass
+
+        row_aria = ""
+        try:
+            row_aria = (await item.get_attribute("aria-label")) or ""
+        except Exception:
+            row_aria = ""
+
+        subject = ""
+        sel_subj = (config or {}).get("selectors", {}).get("email_subject")
+        if sel_subj:
+            try:
+                st = await item.locator(sel_subj).first.inner_text(timeout=800)
+                if st and st.strip():
+                    subject = st.strip()
+            except Exception:
+                pass
+        if not subject and row_aria.strip():
+            parts = [p.strip() for p in re.split(r"[,，;；|]", row_aria) if p.strip()]
+            if len(parts) >= 2:
+                subject = parts[1][:500]
+            elif parts:
+                subject = parts[0][:500]
+        if not subject:
+            try:
+                tit = await item.locator("a").first.get_attribute("title", timeout=800)
+                if tit and len(tit.strip()) > 2:
+                    subject = tit.strip()[:500]
+            except Exception:
+                pass
+
+        raw_text = await item.inner_text(timeout=2000)
+        lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
+        if not subject:
+            subject = _infer_owa_list_subject(lines)
+
+        if not date_str and row_aria.strip():
+            date_str = _extract_date_from_line(row_aria) or _extract_date_from_line_safe(
+                row_aria, max_line_len=220
+            )
+
+        if not date_str:
+            date_str = _best_date_from_lines(lines)
+
+        if not date_str:
+            try:
+                rt = await item.get_attribute("title")
+                if rt:
+                    date_str = _extract_date_from_line(rt) or _extract_date_from_line_safe(
+                        rt, max_line_len=120
+                    )
+            except Exception:
+                pass
+
+        href = ""
+        try:
+            href = await item.locator("a").first.get_attribute("href", timeout=2000)
+            if href and not href.startswith("http"):
+                from urllib.parse import urlparse
+
+                mail_base = (config or {}).get("email", {}).get("url", "").split("#")[0].rstrip("/")
+                parsed = urlparse(mail_base)
+                mail_origin = f"{parsed.scheme}://{parsed.netloc}"
+                href = mail_origin + href
+        except Exception:
+            pass
+
+        if not subject.strip():
+            return None
+        sender, preview = _infer_sender_and_preview(lines, subject.strip())
+        return {
+            "subject": subject.strip(),
+            "date_str": date_str,
+            "href": href,
+            "raw_date": date_str,
+            "sender": sender,
+            "preview": preview,
+        }
+    except Exception:
+        return None
 
 
 def load_config(config_path: Path) -> dict:
@@ -62,7 +731,12 @@ def load_config(config_path: Path) -> dict:
 def call_llm(prompt: str, config: dict) -> str:
     ai_config = config.get("ai", {})
     base_url = ai_config.get("base_url") or os.getenv("OPENAI_BASE_URL")
-    api_key = ai_config.get("api_key") or os.getenv("OPENAI_API_KEY")
+    
+    # 优先使用用户配置的 apiKey，若未配置或为空字符串，则 Fallback 到全局环境变量
+    api_key = ai_config.get("api_key")
+    if not api_key:
+        api_key = os.getenv("OPENAI_API_KEY") or os.getenv("DEEPSEEK_API_KEY")
+
     if not base_url or not api_key:
         return "缺少 base_url 或 api_key"
 
@@ -125,18 +799,22 @@ def format_human_email_fragment(
     date: str,
     body: str,
     *,
+    sender: str = "",
     part_index: int = 1,
     part_total: int = 1,
 ) -> str:
-    """仅自然语言：主题、日期、正文。续段用一句人话衔接，无机器分隔符。"""
+    """仅自然语言：主题、发件人、日期、正文。续段用一句人话衔接，无机器分隔符。"""
     subject = (subject or "").strip() or "无主题"
     date = (date or "").strip() or "无日期"
+    sender = (sender or "").strip()
     body = (body or "").strip()
     lines: list = []
     if part_total > 1 and part_index > 1:
         lines.append("以下内容紧接上一段，为同一封邮件的连续正文。")
         lines.append("")
     lines.append(f"主题：{subject}")
+    if sender:
+        lines.append(f"发件人：{sender}")
     lines.append(f"日期：{date}")
     lines.append("")
     lines.append(body)
@@ -170,7 +848,7 @@ def build_per_email_analysis_prompt(
 【严禁编造】只能基于下方原文作答。若正文缺失或提取失败须如实说明。
 若用户指令未规定格式，默认按：
 - 邮件标题：
-- 发件人：（若原文中有则填，无则说明未提供）
+- 发件人：（优先使用邮件元数据中已给出的「发件人」字段；若元数据未提供则从正文推断；均无则说明未提供）
 - 内容总结：
 - 重要程度：（1-5 星）
 
@@ -238,155 +916,171 @@ async def get_browser_page(config: dict):
     page = await context.new_page()
     await page.goto(
         email_config.get("url"),
-        wait_until="networkidle",
+        wait_until="domcontentloaded",
         timeout=60000,
     )
     await page.wait_for_timeout(500)
     return playwright, browser, context, page
 
 
-async def search_emails(page, keyword: str, config: dict = None, max_emails: int = 10) -> list:
-    if keyword:
-        # 有关键词：跳转到搜索页面
-        base_url = (config or {}).get("email", {}).get("url", "").rstrip("/")
-        # 兼容有无 #path 的 OWA URL
-        if "#" in base_url:
-            base_url = base_url.split("#")[0].rstrip("/")
-        await page.goto(f"{base_url}/#path=/mail/search", wait_until="domcontentloaded", timeout=30000)
-        await page.wait_for_timeout(2000)
-        print("已跳转到搜索页面")
-    else:
-        # 无关键词：直接查看收件箱最新邮件
-        base_url = (config or {}).get("email", {}).get("url", "").rstrip("/")
-        if "#" in base_url:
-            base_url = base_url.split("#")[0].rstrip("/")
-        await page.goto(f"{base_url}/#path=/mail", wait_until="domcontentloaded", timeout=30000)
-        await page.wait_for_timeout(2000)
-        print("已跳转到收件箱（无关键词，查看最新邮件）")
-    
-    target_frame = page
-    for f in page.frames:
+async def _append_visible_list_rows(
+    target_frame,
+    config: dict,
+    *,
+    mail_list: list,
+    seen_cv: set,
+    dedupe_convid: bool,
+    pool_size: int,
+    incremental_merge: bool,
+) -> int:
+    """扫描当前视口内列表行，按首次出现顺序追加到 mail_list；返回本轮新增条数。"""
+    before = len(mail_list)
+    if len(mail_list) >= pool_size:
+        return 0
+    all_items = await target_frame.locator(_LIST_ITEM_SELECTOR).all()
+    for idx, item in enumerate(all_items):
+        if len(mail_list) >= pool_size:
+            break
         try:
-            if await f.locator("input").count() > 3:
-                target_frame = f
-                print(f"✓ 使用 frame: {f.url[:100]}...")
-                break
-        except Exception:
-            continue
-
-    if keyword:
-        # 有关键词时才需要搜索框 —— 优先使用 config 选择器，减少冗余尝试
-        primary_selectors = []
-        config_sel = (config or {}).get("selectors", {}).get("search_box")
-        if config_sel:
-            primary_selectors.append(target_frame.locator(config_sel))
-        primary_selectors.append(target_frame.get_by_role("searchbox"))
-
-        fallback_selectors = [
-            target_frame.locator('input[aria-label="搜索"]'),
-            target_frame.locator('input[placeholder*="Search"]'),
-        ]
-
-        search_box = None
-        # 先尝试主选择器（3s 超时）
-        for loc in primary_selectors:
-            try:
-                await loc.wait_for(state="visible", timeout=3000)
-                search_box = loc
-                print("✓ 成功定位搜索框（主选择器）")
-                break
-            except Exception:
+            cvid = (await item.get_attribute("data-convid")) or ""
+            if cvid and cvid in seen_cv and (incremental_merge or dedupe_convid):
                 continue
-        # 主选择器未命中，尝试备选（2s 超时）
-        if not search_box:
-            for loc in fallback_selectors:
-                try:
-                    await loc.wait_for(state="visible", timeout=2000)
-                    search_box = loc
-                    print("✓ 成功定位搜索框（备选选择器）")
-                    break
-                except Exception:
-                    continue
-
-        if not search_box:
-            print("\n⚠️  无法定位搜索框，可能是 cookie 已过期，请更新 config.json 中的 cookies 后重试！")
-            await page.screenshot(path="debug_searchbox_final.png")
-            raise RuntimeError("无法定位搜索框，可能是 cookie 已过期，请更新 config.json 中的 cookies 后重试。")
-
-        await search_box.click()
-        await search_box.fill(keyword)
-        await search_box.press("Enter")
-        await page.wait_for_timeout(1500)
-
-    print("开始滚动加载...")
-    for i in range(5):
-        await page.evaluate("window.scrollBy(0, window.innerHeight * 0.8)")
-        await page.wait_for_timeout(300)
-        print(f"滚动 {i+1}/5 次")
-
-    # 提取邮件（最终稳定版）
-    all_items = await target_frame.locator('div[role="option"][data-convid], ._lvv_w[data-convid], [data-convid]').all()
-    print(f"找到 {len(all_items)} 个邮件列表项")
-
-    # 提取前20个（足够覆盖最近邮件）
-    items = all_items[:20]
-
-    mail_list = []
-    import re
-
-    for idx, item in enumerate(items):
-        try:
-            raw_text = await item.inner_text(timeout=2000)
-
-            lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
-
-            subject = lines[0] if lines else ""
-
-            # 智能日期提取（搜索所有行）
-            date_str = ""
-            date_pattern = r'(\d{4}[/-]\d{1,2}[/-]\d{1,2})'
-            time_pattern = r'(\d{1,2}:\d{2}(\s*[APap][Mm])?)'
-            for line in lines:
-                match = re.search(date_pattern, line)
-                if match:
-                    date_str = match.group(1)
-                    break
-            # 如果没匹配到完整日期，尝试匹配时间（当天邮件只显示时间）
-            if not date_str:
-                for line in lines:
-                    if re.search(time_pattern, line):
-                        date_str = datetime.now().strftime('%Y-%m-%d')
-                        break
-            if not date_str and len(lines) > 1:
-                date_str = lines[1]
-
-            href = ""
-            try:
-                href = await item.locator("a").first.get_attribute("href", timeout=2000)
-                if href and not href.startswith("http"):
-                    mail_base = (config or {}).get("email", {}).get("url", "").split("#")[0].rstrip("/")
-                    # Extract scheme + host only
-                    from urllib.parse import urlparse
-                    parsed = urlparse(mail_base)
-                    mail_origin = f"{parsed.scheme}://{parsed.netloc}"
-                    href = mail_origin + href
-            except:
-                pass
-
-            if subject.strip():
-                mail_list.append({
-                    "subject": subject.strip(),
-                    "date_str": date_str,
-                    "href": href,
-                    "raw_date": date_str,
-                    "locator": item  # 保存 locator 对象
-                })
-                print(f"邮件项 {idx+1} 提取成功: {subject.strip()[:70]} | 日期: {date_str}")
+            meta = await _parse_list_item_row(item, config)
+            if not meta:
+                continue
+            mail_list.append(
+                {
+                    "subject": meta["subject"],
+                    "date_str": meta["date_str"],
+                    "href": meta["href"],
+                    "raw_date": meta["raw_date"],
+                    "sender": meta.get("sender") or "",
+                    "preview": meta.get("preview") or "",
+                    "locator": item,
+                    "convid": cvid,
+                }
+            )
+            if cvid:
+                seen_cv.add(cvid)
+            print(
+                f"邮件项 {len(mail_list)} 提取成功: {meta['subject'][:70]} | 日期: {meta['date_str']}"
+            )
         except Exception as e:
-            print(f"邮件项 {idx+1} 处理失败: {e}")
+            print(f"邮件项(视口) {idx+1} 处理失败: {e}")
             continue
+    return len(mail_list) - before
 
-    # 使用 datetime 精确排序（从新到旧）
+
+async def search_emails(
+    page,
+    keyword: str,
+    config: dict = None,
+    max_emails: int = 10,
+    mode: str = "daily",
+    *,
+    sort_by_date: bool = True,
+    dedupe_convid: bool = False,
+    list_scroll_pause_ms: Optional[int] = None,
+    list_scroll_step_fraction: Optional[float] = None,
+    deep_list_initial_wait_ms: Optional[int] = None,
+    deep_stagnation_pause_ms: Optional[int] = None,
+    deep_stagnation_limit: Optional[int] = None,
+) -> list:
+    target_frame = await _prepare_owa_mail_list_frame(page, keyword, config)
+
+    pool_size = max(max_emails, 50) if mode == "deep" else max_emails
+    mail_list: list = []
+    seen_cv: set = set()
+
+    if mode == "deep":
+        # 从列表顶开始，小步慢滚 + 去重合并，避免「猛滚到底」后 DOM 第一项变成很旧的邮件
+        step_frac = (
+            list_scroll_step_fraction
+            if list_scroll_step_fraction is not None
+            else 0.36
+        )
+        pause_ms = list_scroll_pause_ms if list_scroll_pause_ms is not None else 550
+        max_steps = max(72, pool_size * 2)
+        stagnation_limit = (
+            deep_stagnation_limit if deep_stagnation_limit is not None else 15
+        )
+        initial_wait = (
+            deep_list_initial_wait_ms
+            if deep_list_initial_wait_ms is not None
+            else 850
+        )
+        stagnation_wait = (
+            deep_stagnation_pause_ms
+            if deep_stagnation_pause_ms is not None
+            else 1500
+        )
+
+        print(
+            f"开始深度加载列表（自顶向下增量，步长≈{step_frac:.2f} 屏，间隔 {pause_ms}ms）..."
+        )
+        await _reset_owa_mail_list_scroll(target_frame)
+        await page.wait_for_timeout(initial_wait)
+
+        stagnation = 0
+        for step in range(max_steps):
+            if len(mail_list) >= pool_size:
+                break
+            added = await _append_visible_list_rows(
+                target_frame,
+                config,
+                mail_list=mail_list,
+                seen_cv=seen_cv,
+                dedupe_convid=dedupe_convid,
+                pool_size=pool_size,
+                incremental_merge=True,
+            )
+            if added == 0:
+                stagnation += 1
+                if stagnation >= stagnation_limit:
+                    print(f"连续 {stagnation_limit} 轮无新邮件，停止滚动（已 {len(mail_list)} 条）")
+                    break
+                # 停滞时做大步冲刺滚动，触发 OWA 异步加载
+                await _scroll_owa_mail_list_step(
+                    target_frame,
+                    container_fraction=0.95,
+                    min_delta=300,
+                )
+                await page.wait_for_timeout(stagnation_wait)
+            else:
+                stagnation = 0
+                # 正常滚动
+                await _scroll_owa_mail_list_step(
+                    target_frame,
+                    container_fraction=step_frac,
+                    min_delta=48,
+                )
+                await page.wait_for_timeout(pause_ms)
+            if len(mail_list) >= pool_size:
+                break
+            print(f"深度滚动 {step + 1}/{max_steps}，已累积 {len(mail_list)} 封")
+
+        print(f"深度模式共解析到 {len(mail_list)} 个邮件列表项（去重后顺序）")
+    else:
+        print(f"开始滚动加载 (日常模式)...")
+        scroll_times = 5
+        for i in range(scroll_times):
+            await _scroll_owa_mail_list_step(target_frame)
+            await page.wait_for_timeout(420)
+            print(f"滚动 {i+1}/{scroll_times} 次")
+        await _reset_owa_mail_list_scroll(target_frame)
+        await page.wait_for_timeout(650)
+        await _append_visible_list_rows(
+            target_frame,
+            config,
+            mail_list=mail_list,
+            seen_cv=seen_cv,
+            dedupe_convid=dedupe_convid,
+            pool_size=pool_size,
+            incremental_merge=False,
+        )
+        print(f"日常模式找到 {len(mail_list)} 个邮件列表项")
+
+    # 使用 datetime 精确排序（从新到旧）；开发者按「列表第几封」取样时应关闭，以保持与收件箱从上到下顺序一致
     def parse_date(d):
         if not d:
             return datetime(1900, 1, 1)
@@ -403,93 +1097,572 @@ async def search_emails(page, keyword: str, config: dict = None, max_emails: int
         except:
             return datetime(1900, 1, 1)
 
-    mail_list.sort(key=lambda x: parse_date(x["raw_date"]), reverse=True)
-    safe_max_emails = max(1, min(int(max_emails or 10), 10))
-    final_items = mail_list[:safe_max_emails]
+    if sort_by_date:
+        mail_list.sort(key=lambda x: parse_date(x["raw_date"]), reverse=True)
+    final_items = mail_list[:max_emails]
 
     emails = []
     for m in final_items:
-        emails.append({
-            "subject": m["subject"], 
-            "date": m["date_str"], 
-            "href": m["href"],
-            "locator": m["locator"]
-        })
+        emails.append(
+            {
+                "subject": m["subject"],
+                "date": m["date_str"],
+                "href": m["href"],
+                "locator": m["locator"],
+                "convid": (m.get("convid") or ""),
+                "sender": m.get("sender") or "",
+                "preview": m.get("preview") or "",
+            }
+        )
         print(f"最终邮件 {len(emails)}: {m['subject'][:75]} | 日期: {m['date_str']}")
 
     print(f"最终提取到最近前 {len(emails)} 封邮件")
     return emails
 
 
-async def extract_full_body(page, item_locator) -> str:
-    try:
-        # 点击邮件列表项
-        await item_locator.click()
-        # 等待阅读窗格加载
-        await page.wait_for_timeout(500)
-        
-        # 寻找包含正文的 frame
-        frames = page.frames
-        content_frame = page
-        
-        # 尝试找到 ReadingPane 或正文容器
-        # 策略：遍历所有 frame，看哪个包含典型的邮件正文结构
-        found_frame = False
-        
-        # 1. 尝试直接在当前 page 查找（非 iframe 模式）
-        # Outlook OWA 可能会使用 iframe，也可能直接渲染
-        
-        # 定义可能的正文选择器
-        body_selectors = [
-            'div[role="document"]',
-            'div.gs div.ii',
-            'div[role="main"]',
-            'div[aria-label*="正文"]',
-            'div[aria-label*="Body"]',
-            'div.AllowTextSelection',
-            'div.rps_5055' # 常见的随机类名，可能不稳定，但有时有用
-        ]
-        
-        # 遍历 frames 寻找
-        for f in frames:
-            for sel in body_selectors:
-                try:
-                    if await f.locator(sel).count() > 0:
-                        content_frame = f
-                        found_frame = True
-                        break
-                except:
-                    continue
-            if found_frame:
-                break
-        
-        body_text = ""
-        for sel in body_selectors:
-            try:
-                locator = content_frame.locator(sel).first
-                if await locator.is_visible(timeout=2000):
-                    body_text = await locator.inner_text(timeout=2000)
-                    if len(body_text) > 50:
-                        break
-            except:
-                continue
-                
-        # 如果还是没找到，尝试提取所有文本
-        if not body_text:
-             body_text = await content_frame.inner_text()
+def _tail_after_last_long_breadcrumb_line(text: str) -> str:
+    """取最后一行「含 » 且较长」之后的文本；用于区分列表预览与阅读窗格全文。"""
+    lines = (text or "").splitlines()
+    last_i = -1
+    for i, ln in enumerate(lines):
+        s = ln.strip()
+        if "»" in s and len(s) > 85:
+            last_i = i
+    if last_i < 0:
+        return (text or "").strip()
+    return "\n".join(lines[last_i + 1 :]).strip()
 
-        # 清理正文
+
+def _looks_like_lms_list_row_preview(text: str) -> bool:
+    """
+    OWA 虚拟列表行里的 LM Core / 课程通知预览：面包屑 + 单行截断，不是阅读窗格全文。
+    与「同结构但后面还有大段正文」的已打开邮件区分。
+    """
+    if not text:
+        return False
+    t = text.strip()
+    n = len(t)
+    if n > 8500:
+        return False
+    if t.count("\n\n") >= 4 and n > 4000:
+        return False
+    has_crumb = "»" in t and (
+        "Forums" in t
+        or "Forum" in t
+        or "Announcements" in t
+        or "Annoucements" in t
+    )
+    long_crumb_line = any(
+        "»" in ln and len(ln.strip()) > 95 for ln in t.splitlines()
+    )
+    tail = _tail_after_last_long_breadcrumb_line(t)
+    if has_crumb and long_crumb_line:
+        if len(tail) < 380:
+            return True
+        return False
+    if has_crumb and "(via LM Core)" in t and n < 4200 and len(tail) < 500:
+        return True
+    return False
+
+
+def _reading_pane_activation_ok(text: str, expected_subject: str) -> bool:
+    """点击列表项后，阅读区是否已像「单封邮件正文」而非列表预览/混排。"""
+    if not (text or "").strip():
+        return False
+    # 列表预览里会重复出现主题，不能先于预览检测用「含主题」判断
+    if _looks_like_mixed_mail_list(text):
+        return False
+    if _looks_like_lms_list_row_preview(text):
+        return False
+    if _body_contains_expected_subject(text, expected_subject):
+        return True
+    n = len(text.strip())
+    if n >= 1400:
+        return True
+    if n >= 650:
+        if re.search(r"(?m)^(Dear|Hi|Hello|各位|亲爱的)\b", text, re.I):
+            return True
+        if text.count("\n\n") >= 1:
+            return True
+        if n >= 950:
+            return True
+        return False
+    if n >= 260 and re.search(r"(?m)^(Dear|Hi|Hello)\s+\w+", text, re.I):
+        lines = [x.strip() for x in text.splitlines() if x.strip()]
+        if len(lines) >= 5:
+            return True
+    return False
+
+
+def _text_looks_abruptly_truncated(text: str) -> bool:
+    """
+    OWA 阅读窗格常做虚拟化：未滚到底时 inner_text 会在句中截断。
+    用于触发「再滚动 + 重采」；规则偏保守以减少误判。
+    """
+    t = (text or "").rstrip()
+    n = len(t)
+    if n < 120 or n > 16000:
+        return False
+    if t[-1] in ".!?。！？…\"')】」":
+        return False
+    lines = [x.strip() for x in t.splitlines() if x.strip()]
+    if not lines:
+        return False
+    tail = lines[-1]
+    if len(tail) < 28:
+        return False
+    if tail[-1] in "。！？.!?…":
+        return False
+    if tail.endswith(":") or tail.endswith("："):
+        return n < 5200
+    tail_lower = tail.lower()
+    if re.search(
+        r"\b(the|a|an|to|and|or|of|for|in|is|are|be|with|into|at|on|by|from|as)\s*$",
+        tail_lower,
+    ):
+        return True
+    if re.search(r"[a-z]\s*$", tail) and len(tail) > 40:
+        return True
+    # 最后一行很长却以字母/数字结尾且无句末标点（如 “…Engineering 20”）
+    if (
+        len(tail) > 52
+        and n < 8000
+        and n > 160
+        and tail[-1].isalnum()
+        and not re.search(r"[。！？.!?…][\s\"'」\])]*$", tail)
+    ):
+        return True
+    return False
+
+
+async def _owa_scroll_reading_pane_for_lazy_body(page, *, rounds: int = 14) -> None:
+    """在各 frame 内把邮件正文可滚动祖先滚到底，促使 OWA 挂载完整 DOM。"""
+    stale = 0
+    for r in range(max(1, rounds)):
+        total_moved = 0.0
+        for fr in list(page.frames):
+            try:
+                delta = await fr.evaluate(_OWA_SCROLL_READING_PANE_BODY_JS)
+                if isinstance(delta, (int, float)) and delta > 0:
+                    total_moved += float(delta)
+            except Exception:
+                continue
+        pause = 75 if r < 3 else min(110 + r * 8, 220)
+        await page.wait_for_timeout(pause)
+        if total_moved < 0.5:
+            stale += 1
+        else:
+            stale = 0
+        if r >= 7 and stale >= 5:
+            break
+
+
+def _owa_body_candidate_score(text: str) -> float:
+    """分越高越像单封阅读窗格正文（惩罚整页列表+导航）。"""
+    if not text or len(text) < 40:
+        return -1e9
+    head = text[:2200]
+    score = 0.0
+    if _looks_like_lms_list_row_preview(text):
+        score -= 260.0
+    if "搜索邮件和人员" in head or "Search mail and people" in head:
+        score -= 120.0
+    if "收藏夹" in head[:900] and "收件箱" in head[:900]:
+        score -= 80.0
+    if "Inbox" in head[:600] and "Drafts" in head[:1200] and "Sent" in head[:1200]:
+        score -= 70.0
+    if re.search(r"总共\s+\d+\s+个项目.*已加载", text):
+        score -= 220.0
+    date_line_count = 0
+    for ln in text.splitlines()[:500]:
+        s = (ln or "").strip()
+        if re.match(r"^(周[一二三四五六日天]\s+\d{1,2}/\d{1,2})$", s):
+            date_line_count += 1
+        elif re.match(r"^\d{4}[/-]\d{1,2}[/-]\d{1,2}$", s):
+            date_line_count += 1
+    if date_line_count >= 8:
+        score -= min(150.0, date_line_count * 10.0)
+    if head.count("\n") > 35 and len(head) > 1800:
+        score -= 25.0
+    lines = text.splitlines()
+    if len(text) > 25000 and len(lines) > 180:
+        short_lines = sum(1 for ln in lines[:300] if 0 < len(ln.strip()) < 120)
+        if short_lines > 120:
+            score -= 60.0
+    return score
+
+
+def _strip_owa_list_chrome_from_body(text: str) -> str:
+    """
+    OWA 有时把文件夹树+列表与阅读区拼进同一 inner_text。
+    从「拟办事项」、隐私提示或英文信头起截断，保留当前打开邮件正文。
+    """
+    if not text or len(text) < 200:
+        return text
+    m_footer = re.search(r"(?m)^总共\s+\d+\s+个项目.*已加载.*$", text)
+    if m_footer and m_footer.start() > 120:
+        text = text[: m_footer.start()].rstrip()
+    head = text[:2500]
+    if "搜索邮件和人员" not in head and "Search mail and people" not in head:
+        return text
+
+    cut = -1
+    for marker in (
+        "\n拟办事项\n",
+        "\n拟办事项",
+        "\n为了保护你的隐私",
+        "\nTo protect your privacy",
+        "\nDate\tFrom\tSubject",
+        "\n您的一次性验证码",
+    ):
+        i = text.rfind(marker)
+        if i > cut:
+            cut = i
+    if cut > 200:
+        tail = text[cut:].lstrip()
+        if len(tail) > 150:
+            return tail
+
+    m_iter = list(re.finditer(r"(?m)^Dear\s+[A-Za-z]", text))
+    if m_iter:
+        last = m_iter[-1].start()
+        if last > 300:
+            return text[last:].lstrip()
+
+    m2 = list(re.finditer(r"(?m)^Hi\s+[A-Za-z]", text))
+    if m2:
+        last = m2[-1].start()
+        if last > 300:
+            return text[last:].lstrip()
+
+    return text
+
+
+def _normalize_compact_text(text: str) -> str:
+    return re.sub(r"\s+", " ", (text or "")).strip().lower()
+
+
+def _body_contains_expected_subject(text: str, expected_subject: str) -> bool:
+    subj = _normalize_compact_text(expected_subject)
+    if len(subj) < 8:
+        return False
+    hay = _normalize_compact_text((text or "")[:2400])
+    if not hay:
+        return False
+    if subj in hay:
+        return True
+    # 长主题在 OWA 中偶尔会被截断，允许用前缀做弱匹配
+    return len(subj) >= 40 and subj[:40] in hay
+
+
+def _looks_like_mixed_mail_list(text: str) -> bool:
+    """识别「正文 + 多封列表项」混在一起的脏结果。"""
+    if not text:
+        return False
+    if "Date From Subject Web Actions" in text:
+        return True
+    lines = [ln.strip() for ln in (text or "").splitlines() if ln.strip()]
+    if len(lines) < 6:
+        return False
+
+    date_like = 0
+    sender_subject_date_triplets = 0
+    via_count = 0
+    for ln in lines[:220]:
+        if _line_is_date_or_time_only(ln):
+            date_like += 1
+        if "(via LM Core)" in ln:
+            via_count += 1
+
+    for i in range(max(0, min(len(lines) - 2, 80))):
+        a, b, c = lines[i], lines[i + 1], lines[i + 2]
+        if (
+            _line_likely_owa_sender(a)
+            and not _line_is_date_or_time_only(a)
+            and not _line_is_date_or_time_only(b)
+            and _line_is_date_or_time_only(c)
+        ):
+            sender_subject_date_triplets += 1
+
+    if sender_subject_date_triplets >= 2:
+        return True
+    if date_like >= 5 and via_count >= 2:
+        return True
+    return False
+
+
+async def _row_is_selected(item_locator) -> bool:
+    try:
+        aria = ((await item_locator.get_attribute("aria-selected")) or "").strip().lower()
+        if aria == "true":
+            return True
+    except Exception:
+        pass
+    try:
+        cls = ((await item_locator.get_attribute("class")) or "").lower()
+        if any(token in cls for token in ("selected", "is-selected", "isactive", "active")):
+            return True
+    except Exception:
+        pass
+    return False
+
+
+async def _collect_owa_body_candidates(page, *, expected_subject: str = "") -> list[tuple[float, str]]:
+    frames = list(page.frames)
+    scoped_roots = [
+        '[id*="ReadingPane"]',
+        '[id*="readingPane"]',
+        '[class*="ReadingPane"]',
+        '[class*="readingPane"]',
+        '[data-app-section="MessageReading"]',
+        '[aria-label*="Reading Pane" i]',
+        '[aria-label*="阅读窗格"]',
+    ]
+    body_selectors = [
+        'div[aria-label*="Message body"]',
+        'div[aria-label*="邮件正文"]',
+        'div[aria-label*="正文"]',
+        'div[aria-label*="Body"]',
+        'article[role="document"]',
+        'div.gs div.ii',
+        'div.AllowTextSelection',
+        'div[role="document"]',
+        'div.rps_5055',
+    ]
+    fallback_body_selectors = [
+        'article[role="document"]',
+        'div[role="document"]',
+        'div[aria-label*="Message body"]',
+        'div[aria-label*="邮件正文"]',
+        'div[aria-label*="正文"]',
+        'div[aria-label*="Body"]',
+        'div.AllowTextSelection',
+        'div.rps_5055',
+    ]
+
+    candidates: list[tuple[float, str]] = []
+    for f in frames:
+        for root_sel in scoped_roots:
+            try:
+                roots = f.locator(root_sel)
+                cnt = await roots.count()
+            except Exception:
+                continue
+            for i in range(min(cnt, 3)):
+                try:
+                    root = roots.nth(i)
+                    if not await root.is_visible(timeout=800):
+                        continue
+                    raw_root = await root.inner_text(timeout=2500)
+                    if len(raw_root) >= 50:
+                        score = _owa_body_candidate_score(raw_root) + 35.0
+                        if _body_contains_expected_subject(raw_root, expected_subject):
+                            score += 60.0
+                        if _looks_like_mixed_mail_list(raw_root):
+                            score -= 220.0
+                        candidates.append((score, raw_root))
+                except Exception:
+                    continue
+
+                for sel in body_selectors:
+                    try:
+                        loc = root.locator(sel)
+                        sub_cnt = await loc.count()
+                        for j in range(min(sub_cnt, 8)):
+                            el = loc.nth(j)
+                            if not await el.is_visible(timeout=600):
+                                continue
+                            raw = await el.inner_text(timeout=2500)
+                            if len(raw) < 50:
+                                continue
+                            score = _owa_body_candidate_score(raw) + 55.0
+                            if _body_contains_expected_subject(raw, expected_subject):
+                                score += 75.0
+                            if _looks_like_mixed_mail_list(raw):
+                                score -= 240.0
+                            candidates.append((score, raw))
+                    except Exception:
+                        continue
+
+    for f in frames:
+        for sel in fallback_body_selectors:
+            try:
+                loc = f.locator(sel)
+                cnt = await loc.count()
+                for i in range(min(cnt, 6)):
+                    el = loc.nth(i)
+                    if not await el.is_visible(timeout=600):
+                        continue
+                    raw = await el.inner_text(timeout=2500)
+                    if len(raw) < 50:
+                        continue
+                    score = _owa_body_candidate_score(raw) + 10.0
+                    if _body_contains_expected_subject(raw, expected_subject):
+                        score += 50.0
+                    if _looks_like_mixed_mail_list(raw):
+                        score -= 220.0
+                    candidates.append((score, raw))
+            except Exception:
+                continue
+
+    if candidates:
+        return candidates
+
+    for f in frames:
+        try:
+            if await f.locator("body").count() == 0:
+                continue
+            raw = await f.locator("body").first.inner_text(timeout=2500)
+            if len(raw) < 80 or len(raw) > 600000:
+                continue
+            score = _owa_body_candidate_score(raw) - 70.0
+            if _body_contains_expected_subject(raw, expected_subject):
+                score += 30.0
+            if _looks_like_mixed_mail_list(raw):
+                score -= 260.0
+            candidates.append((score, raw))
+        except Exception:
+            continue
+    return candidates
+
+
+async def _best_owa_body_candidate(page, *, expected_subject: str = "") -> tuple[str, float]:
+    candidates = await _collect_owa_body_candidates(page, expected_subject=expected_subject)
+    if not candidates:
+        return "", -1e9
+    candidates.sort(key=lambda x: (x[0], -len(x[1])))
+    return candidates[-1][1], candidates[-1][0]
+
+
+async def _activate_mail_item(
+    page,
+    item_locator,
+    *,
+    expected_subject: str = "",
+    fast: bool = False,
+) -> None:
+    previous_text, _ = await _best_owa_body_candidate(page)
+    previous_norm = _normalize_compact_text(previous_text[:1600])
+
+    click_targets = []
+    try:
+        anchor = item_locator.locator("a").first
+        if await anchor.count() > 0:
+            click_targets.append(anchor)
+    except Exception:
+        pass
+    click_targets.append(item_locator)
+
+    pre_click_ms = 70 if fast else 120
+    base_settle_ms = 280 if fast else 520
+    step_settle_ms = 140 if fast else 260
+    enter_ms = 120 if fast else 240
+    extra_settle = min(len(expected_subject or "") // 25, 420) if not fast else 0
+
+    for attempt in range(5):
+        await item_locator.scroll_into_view_if_needed()
+        await page.wait_for_timeout(pre_click_ms)
+        clicked = False
+        use_dblclick = attempt >= 2
+        for target in click_targets:
+            try:
+                if use_dblclick:
+                    await target.dblclick(timeout=5000)
+                else:
+                    await target.click(timeout=5000)
+                clicked = True
+                break
+            except Exception:
+                continue
+        if not clicked:
+            break
+
+        await page.wait_for_timeout(
+            base_settle_ms + attempt * step_settle_ms + extra_settle
+        )
+        current_text, current_score = await _best_owa_body_candidate(
+            page, expected_subject=expected_subject
+        )
+        if _reading_pane_activation_ok(current_text, expected_subject):
+            return
+        current_norm = _normalize_compact_text(current_text[:1600])
+        # 未命中主题时仍可能已是长正文（主题只在标题栏）；高分且足够长则不再死磕
+        if (
+            current_text
+            and not _looks_like_mixed_mail_list(current_text)
+            and not _looks_like_lms_list_row_preview(current_text)
+            and (current_norm != previous_norm or await _row_is_selected(item_locator))
+            and current_score > 40
+            and len((current_text or "").strip()) > 1100
+        ):
+            return
+        try:
+            await item_locator.press("Enter")
+            await page.wait_for_timeout(enter_ms)
+        except Exception:
+            pass
+
+
+async def extract_full_body(
+    page,
+    item_locator,
+    *,
+    expected_subject: str = "",
+    fast_activation: bool = False,
+    extra_reading_pane_rounds: int = 0,
+) -> str:
+    try:
+        await _activate_mail_item(
+            page,
+            item_locator,
+            expected_subject=expected_subject,
+            fast=fast_activation,
+        )
+        if not fast_activation:
+            await page.wait_for_timeout(300)
+        # OWA 阅读窗格常虚拟渲染：先滚到底再取 inner_text，否则正文在句中被截断
+        base_rp = 5 if fast_activation else 14
+        extra_rp = max(0, int(extra_reading_pane_rounds or 0))
+        await _owa_scroll_reading_pane_for_lazy_body(
+            page, rounds=base_rp + extra_rp
+        )
+        body_text, _ = await _best_owa_body_candidate(page, expected_subject=expected_subject)
+        if _looks_like_lms_list_row_preview(body_text) and not fast_activation:
+            await page.wait_for_timeout(500)
+            await _owa_scroll_reading_pane_for_lazy_body(page, rounds=12)
+            body_text2, _ = await _best_owa_body_candidate(
+                page, expected_subject=expected_subject
+            )
+            if len((body_text2 or "").strip()) > len((body_text or "").strip()) * 1.08:
+                body_text = body_text2
+            elif not _looks_like_lms_list_row_preview(body_text2):
+                body_text = body_text2
+        if not fast_activation and _text_looks_abruptly_truncated(body_text):
+            await _owa_scroll_reading_pane_for_lazy_body(page, rounds=20)
+            await page.wait_for_timeout(320)
+            body_text2, _ = await _best_owa_body_candidate(
+                page, expected_subject=expected_subject
+            )
+            if len((body_text2 or "").strip()) > len((body_text or "").strip()):
+                body_text = body_text2
+        if not body_text:
+            try:
+                body_text = await page.locator("body").first.inner_text(timeout=3000)
+            except Exception:
+                body_text = ""
+
+        body_text = _strip_owa_list_chrome_from_body(body_text)
+
         from bs4 import BeautifulSoup
-        soup = BeautifulSoup(body_text, 'html.parser')
+
+        soup = BeautifulSoup(body_text, "html.parser")
         for tag in soup(["script", "style", "header", "footer", "nav", "button"]):
             tag.decompose()
         clean_text = soup.get_text(separator="\n", strip=True)
-        
-        # 返回列表页（如果需要，比如手机版布局，但在桌面版 OWA 通常不需要显式返回，点击下一个即可）
-        # 这里为了稳健，不执行显式后退，因为 OWA 是单页应用，点击下一个列表项通常会自动切换
-        
+        clean_text = _strip_owa_list_chrome_from_body(clean_text)
+
         return clean_text.strip()
-        
+
     except Exception as e:
         print(f"提取正文失败: {e}")
         return f"[正文提取失败: {str(e)[:100]}]"
@@ -515,15 +1688,19 @@ async def main() -> None:
         user_instruction = input("请输入总结指令（例如：只告诉我前3封的内容、只总结有活动的邮件、用简单中文说一下）：").strip()
         if not user_instruction:
             user_instruction = "请用自然语气总结这些邮件，重点关注活动、课程作业和重要事项。"
-        email_count_raw = input("请输入处理邮件数量（1-10，默认 10）：").strip()
+        mode_input = input("请选择模式 (1: 日常模式[最高10], 2: 深度搜索[最高100])，默认 1：").strip()
+        op_mode = "deep" if mode_input == "2" else "daily"
+        
+        limit_ceiling = 100 if op_mode == "deep" else 10
+        email_count_raw = input(f"请输入处理邮件数量（1-{limit_ceiling}，默认 {limit_ceiling}）：").strip()
         try:
-            email_count = int(email_count_raw) if email_count_raw else 10
+            email_count = int(email_count_raw) if email_count_raw else limit_ceiling
         except ValueError:
-            email_count = 10
-        email_count = max(1, min(email_count, 10))
+            email_count = limit_ceiling
+        email_count = max(1, min(email_count, limit_ceiling))
 
         try:
-            emails = await search_emails(page, search_keyword, config=config, max_emails=email_count)
+            emails = await search_emails(page, search_keyword, config=config, max_emails=email_count, mode=op_mode)
         except RuntimeError as e:
             print(f"\n❌ {e}")
             return
@@ -533,12 +1710,17 @@ async def main() -> None:
         extracted_items = []
         for i, e in enumerate(emails):
             print(f"正在提取第 {i+1} 封邮件正文: {e['subject'][:30]}...")
-            body = await extract_full_body(page, e["locator"])
+            body = await extract_full_body(
+                page,
+                e["locator"],
+                expected_subject=e.get("subject", ""),
+            )
             extracted_items.append(
                 {
                     "index": i + 1,
                     "subject": e.get("subject", ""),
                     "date": e.get("date", ""),
+                    "sender": e.get("sender", ""),
                     "body": body,
                 }
             )
@@ -568,6 +1750,7 @@ async def main() -> None:
                 str(item.get("subject", "") or ""),
                 str(item.get("date", "") or ""),
                 str(item.get("body") or ""),
+                sender=str(item.get("sender", "") or ""),
             )
             prompts.append(
                 build_per_email_analysis_prompt(

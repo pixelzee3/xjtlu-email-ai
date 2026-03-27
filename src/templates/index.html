@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap"
         rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
     <script>
         window.onload = function () {
             if (typeof marked === "undefined") {
@@ -286,6 +287,14 @@
             min-width: 0;
         }
 
+        .hero-copy h1.hero-size-sm {
+            font-size: clamp(1.85rem, 4.2vw, 3.6rem);
+        }
+
+        .hero-copy h1.hero-size-lg {
+            font-size: clamp(2.85rem, 5.8vw, 6rem);
+        }
+
         /* 旧版迁移或自定义 HTML 中仍可使用 .hero-title-accent */
         .hero-copy h1.hero-title-custom .hero-title-accent {
             color: var(--accent);
@@ -414,6 +423,35 @@
             flex-wrap: wrap;
         }
 
+        .cookie-interactive-hint {
+            font-size: 0.84rem;
+            color: var(--text-muted);
+            line-height: 1.55;
+        }
+
+        .cookie-advanced-details {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+            background: var(--bg-soft);
+        }
+
+        .cookie-advanced-details summary {
+            cursor: pointer;
+            font-size: 0.86rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            list-style: none;
+        }
+
+        .cookie-advanced-details summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .cookie-advanced-details[open] summary {
+            margin-bottom: 10px;
+        }
+
         .welcome-slot {
             min-height: 0;
         }
@@ -504,7 +542,8 @@
             gap: 7px;
         }
 
-        .input-group label {
+        .input-group label,
+        .input-group .label-like {
             font-size: 0.82rem;
             font-weight: 600;
             color: var(--text-main);
@@ -550,6 +589,28 @@
             padding-left: 14px;
         }
 
+        .settings-form select {
+            width: 100%;
+            border: 1px solid var(--border);
+            background: var(--bg-elevated);
+            color: var(--text-strong);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            font: inherit;
+            font-size: 0.94rem;
+            line-height: 1.5;
+            cursor: pointer;
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+            box-shadow: var(--shadow-inset);
+        }
+
+        .settings-form select:focus {
+            outline: none;
+            border-color: var(--accent-border);
+            box-shadow: 0 0 0 4px rgba(15, 143, 102, 0.1);
+            background: var(--bg-surface);
+        }
+
         .input-wrapper textarea {
             min-height: 132px;
             resize: vertical;
@@ -574,9 +635,331 @@
             line-height: 1.6;
         }
 
+        #heroEditContent {
+            min-height: 80px;
+            padding: 12px 14px;
+            font: inherit;
+            line-height: 1.55;
+            resize: vertical;
+        }
+
+        .hero-simple-fields {
+            display: grid;
+            gap: 14px;
+        }
+
+        .settings-form .hero-simple-fields input[type="text"] {
+            padding: 12px 14px;
+        }
+
+        .hero-color-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hero-color-presets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .hero-color-presets button {
+            border: 1px solid var(--accent-border);
+            border-radius: 999px;
+            padding: 6px 12px;
+            font: inherit;
+            font-size: 0.78rem;
+            background: var(--bg-soft);
+            color: var(--text-main);
+            cursor: pointer;
+            transition: background var(--transition-fast), border-color var(--transition-fast);
+        }
+
+        .hero-color-presets button:hover {
+            background: var(--bg-surface);
+            border-color: var(--accent);
+        }
+
+        .hero-color-presets button.is-active {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-soft);
+        }
+
+        .hero-color-picker-wrap {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .hero-color-picker-wrap input[type="color"] {
+            width: 40px;
+            height: 32px;
+            padding: 0;
+            border: 1px solid var(--accent-border);
+            border-radius: 8px;
+            cursor: pointer;
+            background: transparent;
+        }
+
+        .hero-edit-preview-wrap {
+            border: 1px solid var(--accent-border);
+            border-radius: 14px;
+            padding: 14px 16px;
+            background: var(--bg-soft);
+        }
+
+        .hero-edit-preview-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-faint);
+            margin-bottom: 8px;
+        }
+
+        .hero-edit-preview-title {
+            font-size: clamp(1.4rem, 3.5vw, 2.4rem);
+            line-height: 1.05;
+            letter-spacing: -0.05em;
+            color: var(--text-strong);
+            word-break: break-word;
+        }
+
+        .hero-edit-preview-title.hero-size-sm {
+            font-size: clamp(1.1rem, 2.8vw, 1.75rem);
+        }
+
+        .hero-edit-preview-title.hero-size-lg {
+            font-size: clamp(1.65rem, 4vw, 2.85rem);
+        }
+
+        .hero-use-advanced {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            border: 1px solid var(--accent-border);
+            background: var(--bg-panel);
+            cursor: pointer;
+        }
+
+        .hero-use-advanced input {
+            margin-top: 3px;
+        }
+
+        .hero-advanced-details {
+            margin-top: 4px;
+        }
+
+        .hero-advanced-details summary {
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.88rem;
+            color: var(--text-main);
+            padding: 6px 0;
+        }
+
+        .settings-form .field-note {
+            margin-top: -4px;
+        }
+
         .command-actions {
             display: grid;
             gap: 12px;
+        }
+
+        .dev-extract-block {
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px dashed var(--border-strong);
+        }
+
+        .dev-settings-details .dev-extract-in-modal {
+            margin-top: 8px;
+            padding-top: 10px;
+            border-top: none;
+        }
+
+        .dev-settings-details .dev-extract-pre {
+            max-height: 280px;
+        }
+
+        .dev-extract-block .dev-extract-hint {
+            font-size: 0.78rem;
+            color: var(--text-faint);
+            margin-top: 8px;
+            line-height: 1.45;
+        }
+
+        .dev-extract-pre {
+            display: none;
+            margin-top: 12px;
+            max-height: 420px;
+            overflow: auto;
+            padding: 14px 16px;
+            border-radius: var(--radius-sm);
+            background: var(--bg-code);
+            border: 1px solid var(--border);
+            font-family: "IBM Plex Mono", ui-monospace, monospace;
+            font-size: 0.76rem;
+            line-height: 1.45;
+            color: var(--text-main);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .dev-extract-pre.visible {
+            display: block;
+        }
+
+        .deep-scan-panel {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px dashed var(--border-strong);
+        }
+
+        .deep-scan-hint {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .deep-scan-subhint {
+            font-size: 0.76rem;
+            color: var(--text-faint);
+            margin: 8px 0 10px;
+        }
+
+        .deep-scan-filters {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .deep-scan-filters .filter-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .deep-pie-wrap {
+            margin: 12px 0 14px;
+            padding: 14px 16px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            background: var(--bg-surface);
+            box-shadow: var(--shadow-inset);
+        }
+
+        .deep-pie-head {
+            margin-bottom: 6px;
+        }
+
+        .deep-pie-title {
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        .deep-pie-chart {
+            width: 100%;
+            min-height: 280px;
+            height: min(42vw, 320px);
+        }
+
+        .deep-pie-empty {
+            font-size: 0.85rem;
+            color: var(--text-faint);
+            text-align: center;
+            padding: 48px 16px;
+            margin: 0;
+        }
+
+        .deep-date-input {
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-elevated);
+            color: var(--text-main);
+            font: inherit;
+            font-size: 0.88rem;
+        }
+
+        .deep-scan-categories {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 12px;
+            margin-bottom: 14px;
+        }
+
+        .deep-cat-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.82rem;
+            padding: 6px 10px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: var(--bg-elevated);
+            cursor: pointer;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .deep-cat-tag input {
+            margin: 0;
+        }
+
+        .deep-scan-list-wrap {
+            max-height: 360px;
+            overflow: auto;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            background: var(--bg-code);
+        }
+
+        .deep-scan-list-wrap details {
+            margin-bottom: 10px;
+        }
+
+        .deep-scan-list-wrap summary {
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.88rem;
+            padding: 4px 0;
+        }
+
+        .deep-scan-row {
+            display: grid;
+            grid-template-columns: 44px 100px 1fr;
+            gap: 6px 10px;
+            font-size: 0.78rem;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            align-items: start;
+        }
+
+        .deep-scan-row .deep-prev {
+            grid-column: 1 / -1;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
+
+        .deep-scan-count {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--accent);
+            margin-top: 10px;
         }
 
         .btn-primary {
@@ -1007,6 +1390,14 @@
             letter-spacing: -0.04em;
         }
 
+        .results-history-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
         .results-entries {
             padding: 24px;
             display: grid;
@@ -1028,6 +1419,65 @@
             border-color: var(--accent-border);
         }
 
+        .result-entry-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 18px;
+            cursor: pointer;
+            background: var(--bg-soft);
+            border-bottom: 1px solid var(--border);
+            -webkit-user-select: none;
+            user-select: none;
+            transition: background var(--transition-fast);
+        }
+
+        .result-entry-toggle:hover {
+            background: var(--bg-soft-strong);
+        }
+
+        .result-entry-toggle-text {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px 14px;
+            min-width: 0;
+        }
+
+        .result-entry-toggle-text .result-meta-tag {
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .result-entry-toggle-hint {
+            font-size: 0.72rem;
+            color: var(--text-faint);
+            letter-spacing: 0.06em;
+        }
+
+        .result-entry-chevron {
+            flex-shrink: 0;
+            font-size: 0.78rem;
+            color: var(--text-faint);
+            transition: transform var(--transition-fast);
+        }
+
+        .result-entry.collapsed .result-entry-chevron {
+            transform: rotate(-90deg);
+        }
+
+        .result-entry.collapsed .result-entry-panel {
+            display: none;
+        }
+
+        .result-entry-panel {
+            min-width: 0;
+            overflow-x: hidden;
+        }
+
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -1042,7 +1492,7 @@
 
         .result-grid {
             display: grid;
-            grid-template-columns: minmax(220px, 250px) minmax(0, 1fr);
+            grid-template-columns: minmax(200px, 230px) minmax(0, 1fr);
         }
 
         .result-meta {
@@ -1080,7 +1530,8 @@
         }
 
         .result-body {
-            padding: 20px;
+            min-width: 0;
+            padding: 18px 16px;
             display: grid;
             gap: 18px;
         }
@@ -1175,6 +1626,7 @@
         .result-email-section {
             display: grid;
             gap: 10px;
+            min-width: 0;
         }
 
         .email-toggle {
@@ -1195,7 +1647,9 @@
 
         .email-list-wrapper {
             overflow: hidden;
+            overflow-x: hidden;
             max-height: 360px;
+            min-width: 0;
             transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
@@ -1207,16 +1661,20 @@
             display: grid;
             gap: 8px;
             max-height: 320px;
+            min-width: 0;
+            overflow-x: hidden;
             overflow-y: auto;
             padding-right: 2px;
         }
 
         .email-item {
             display: grid;
-            grid-template-columns: 28px minmax(0, 1fr);
-            gap: 12px;
+            grid-template-columns: 26px minmax(0, 1fr);
+            gap: 10px;
             align-items: start;
-            padding: 12px 14px;
+            padding: 10px 12px;
+            max-width: 100%;
+            box-sizing: border-box;
             border-radius: var(--radius-sm);
             border: 1px solid var(--border);
             background: var(--bg-soft);
@@ -1224,14 +1682,14 @@
         }
 
         .email-item:hover {
-            transform: translateX(4px);
+            transform: translateY(-1px);
             border-color: var(--accent-border);
             background: var(--bg-elevated);
         }
 
         .email-item-num {
-            width: 28px;
-            height: 28px;
+            width: 26px;
+            height: 26px;
             border-radius: 999px;
             border: 1px solid var(--accent-border);
             background: var(--accent-soft);
@@ -1373,6 +1831,36 @@
             font-size: 0.84rem;
         }
 
+        .username-edit-row {
+            display: flex;
+            gap: 10px;
+        }
+        .username-edit-input {
+            flex: 1;
+        }
+        .username-edit-btn {
+            border-radius: var(--radius-sm);
+            padding: 0 20px;
+            white-space: nowrap;
+            border: none;
+            cursor: pointer;
+        }
+
+        .user-pill-container {
+            cursor: default;
+            max-width: min(320px, 42vw);
+        }
+
+        .user-pill-text-inner {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .advanced-format-group {
+            margin-top: 12px;
+        }
+
         .settings-form {
             display: grid;
             gap: 14px;
@@ -1406,6 +1894,78 @@
             border-color: var(--accent-border);
             background: var(--accent-soft);
             color: var(--accent-strong);
+        }
+
+        /* ====== 预启动开关 ====== */
+        .prelaunch-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 14px 16px;
+            border: 1px solid var(--border);
+            background: var(--bg-soft);
+            border-radius: var(--radius-md);
+        }
+
+        .prelaunch-row .prelaunch-info {
+            display: grid;
+            gap: 4px;
+        }
+
+        .prelaunch-row .prelaunch-label {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .prelaunch-row .prelaunch-hint {
+            font-size: 0.76rem;
+            color: var(--text-faint);
+            line-height: 1.5;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 48px;
+            height: 26px;
+            flex-shrink: 0;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            inset: 0;
+            background: var(--border-strong);
+            border-radius: 999px;
+            cursor: pointer;
+            transition: background var(--transition-fast);
+        }
+
+        .toggle-slider::before {
+            content: "";
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform var(--transition-fast);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: var(--accent);
+        }
+
+        .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(22px);
         }
 
         details.advanced-settings {
@@ -1622,6 +2182,86 @@
             display: flex;
             gap: 10px;
         }
+
+        @keyframes highlightFlash {
+            0%, 100% {
+                border-color: var(--border);
+                background: var(--bg-elevated);
+                box-shadow: none;
+            }
+            50% {
+                border-color: var(--accent);
+                background: var(--accent-soft);
+                box-shadow: 0 0 15px rgba(15, 143, 102, 0.2);
+            }
+        }
+
+        .flash-highlight {
+            animation: highlightFlash 0.6s ease-in-out 3;
+        }
+
+        /* 隐私与安全承诺区域 */
+        .hero-privacy-notice {
+            margin-top: 10px;
+        }
+        
+        .hero-privacy-title {
+            background: transparent;
+            border-color: transparent;
+            padding-left: 0;
+        }
+
+        .hero-privacy-title .dot {
+            background: var(--success);
+            box-shadow: 0 0 0 6px rgba(15, 143, 102, 0.1);
+        }
+
+        .hero-privacy-title span {
+            font-weight: 600;
+            color: var(--text-strong);
+        }
+
+        /* 可选标注样式 */
+        .optional-label {
+            color: var(--text-faint);
+            font-weight: normal;
+            font-size: 0.85em;
+        }
+
+        .field-note-spaced {
+            margin-top: 2px;
+        }
+
+        /* 模式选择器样式 */
+        .mode-selector-wrap {
+            display: flex;
+            gap: 16px;
+            margin-top: 6px;
+        }
+
+        .mode-radio-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            color: var(--text-main);
+        }
+        #deepScanPanel,
+        #deepScanResults,
+        #deepCategoryPieChart,
+        #deepCategoryPieEmpty {
+            display: none;
+        }
+
+        #analyzeSelectedBtn {
+            display: none;
+            width: 100%;
+            margin-top: 12px;
+        }
+
+        #devExtractDailyBtn {
+            margin-top: 12px;
+        }
     </style>
 </head>
 
@@ -1634,6 +2274,14 @@
                     <div class="brand-title">邮件分析控制台</div>
                 </div>
                 <div class="topbar-actions">
+                    <span class="action-chip user-pill-container" id="userPill">
+                        <span class="chip-mark">U</span>
+                        <span id="userPillText" class="mono user-pill-text-inner">{{ current_username }} · {{ current_email }}</span>
+                    </span>
+                    <button type="button" class="action-chip" onclick="logout()">
+                        <span class="chip-mark">OUT</span>
+                        <span>退出</span>
+                    </button>
                     <a class="action-link" href="{{ mail_url }}" target="_blank" rel="noopener noreferrer">
                         <span class="chip-mark">OW</span>
                         <span>打开邮箱</span>
@@ -1664,6 +2312,22 @@
                                         <button type="button" class="btn-text hero-edit-btn" id="heroEditOpenBtn" title="自定义主标语">编辑标语</button>
                                     </div>
                                 </div>
+                                
+                                <div class="hero-meta hero-privacy-notice">
+                                    <div class="hero-note hero-privacy-title">
+                                        <div class="dot"></div>
+                                        <span>隐私与安全承诺</span>
+                                    </div>
+                                    <div class="hero-meta-item" title="Cookie 仅保存在本地或当前会话，绝不上传第三方服务器">
+                                        🔒 本地凭证安全
+                                    </div>
+                                    <div class="hero-meta-item" title="邮件内容仅流经 AI 模型生成摘要，不会被存储用于任何模型训练">
+                                        🛡️ 拒绝数据训练
+                                    </div>
+                                    <div class="hero-meta-item" title="系统不会保存或读取你的西浦统一身份认证密码">
+                                        🔑 密码零接触
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </section>
@@ -1683,11 +2347,39 @@
                 </div>
 
                 <div class="right-stack">
-                    <section class="panel command-panel">
+                    <section class="panel cookie-panel">
                         <div class="welcome-slot" id="welcomeBanner"></div>
-
+                        <div class="cookie-panel-top">
+                            <div class="panel-title">
+                                <h3>步骤一：连接校园邮箱</h3>
+                            </div>
+                            <span class="cookie-pill" id="cookiePill">未检查</span>
+                        </div>
+                        <p class="cookie-interactive-hint">在弹出的 Edge 窗口中登录网页版邮箱（支持二次验证）。登录成功后点击「我已登录」即可保存会话；高级用户仍可粘贴 Cookie JSON。</p>
+                        <div class="cookie-actions">
+                            <button class="btn-primary" type="button" id="interactiveMailStartBtn" onclick="startInteractiveMailLogin()">打开邮箱登录窗口</button>
+                            <button class="btn-save" type="button" id="interactiveMailDoneBtn" onclick="completeInteractiveMailLogin()">我已登录</button>
+                            <button class="btn-secondary" type="button" id="interactiveMailCancelBtn" onclick="cancelInteractiveMailLogin()">取消</button>
+                        </div>
+                        <details class="cookie-advanced-details" id="cookieAdvancedDetails">
+                            <summary>高级：直接粘贴 Cookie（Cookie-Editor JSON）</summary>
+                            <div class="cookie-editor">
+                                <textarea id="emailCookies" placeholder='[{"name": "...", "value": "...", "domain": "..."}]'></textarea>
+                            </div>
+                        </details>
+                        <div class="cookie-actions">
+                            <button class="action-chip" id="cookieStatusBtn" onclick="checkCookieStatus()">
+                                <span class="chip-mark" id="cookieIcon">CK</span>
+                                <span id="cookieLabel">检查状态</span>
+                            </button>
+                            <button class="btn-save" type="button" onclick="saveCookieOnly()">保存 Cookie</button>
+                            <button class="btn-secondary" type="button" onclick="clearCookieEditor()">清空内容</button>
+                        </div>
+                    </section>
+                    
+                    <section class="panel command-panel">
                         <div class="command-header">
-                            <h2>输入检索条件和总结意图</h2>
+                            <h2>步骤二：执行 AI 总结</h2>
                         </div>
 
                         <div class="input-section">
@@ -1708,39 +2400,60 @@
                             </div>
 
                             <div class="input-group">
+                                <label for="runMode">分析模式</label>
+                                <div class="mode-selector-wrap">
+                                    <label class="mode-radio-label">
+                                        <input type="radio" name="runMode" value="daily" checked onchange="updateMailCountLimit()">
+                                        日常模式
+                                    </label>
+                                    <label class="mode-radio-label">
+                                        <input type="radio" name="runMode" value="deep" onchange="updateMailCountLimit()">
+                                        深度模式（100 封，约需数分钟至十余分钟）
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="input-group" id="emailCountGroup">
                                 <label for="emailCount">处理邮件数量</label>
                                 <div class="input-wrapper">
                                     <span class="input-icon"></span>
-                                    <input type="number" id="emailCount" min="1" max="10" step="1" value="10">
+                                    <input type="number" id="emailCount" min="1" max="10" step="1" value="10" oninput="enforceMailCountLimit()">
                                 </div>
-                                <div class="input-hint">范围 1-10。LLM 会按每批 3 封并行处理，再做 1 次总汇总。</div>
+                                <div class="input-hint" id="emailCountHint">范围 1-10。LLM 回按每批 3 封并行处理。</div>
                             </div>
                         </div>
 
                         <div class="command-actions">
-                            <button class="btn-primary" id="runBtn" onclick="runTask()">
+                            <button class="btn-primary" id="runBtn" onclick="handleStep2Primary()">
                                 <span class="spinner"></span>
                                 <span class="btn-label">开始智能分析</span>
                             </button>
                         </div>
-                    </section>
-
-                    <section class="panel cookie-panel">
-                        <div class="cookie-panel-top">
-                            <div class="panel-title">
-                                <h3>更新 Cookie</h3>
+                        <div id="deepScanPanel" class="deep-scan-panel">
+                            <p class="deep-scan-hint">深度模式为两步：先扫描收件箱列表（最多 100 封）并自动分类，再勾选类别与日期后，仅对选中邮件提取正文并调用 AI。</p>
+                            <div id="deepScanResults" class="deep-scan-results">
+                                <div class="deep-scan-filters">
+                                    <span class="filter-label">日期范围</span>
+                                    <input type="date" id="deepDateFrom" class="deep-date-input" aria-label="开始日期" />
+                                    <span class="deep-date-sep">—</span>
+                                    <input type="date" id="deepDateTo" class="deep-date-input" aria-label="结束日期" />
+                                </div>
+                                <div id="deepCategoryPieWrap" class="deep-pie-wrap">
+                                    <div class="deep-pie-head">
+                                        <span class="deep-pie-title">分类分布</span>
+                                    </div>
+                                    <div id="deepCategoryPieChart" class="deep-pie-chart"></div>
+                                    <p id="deepCategoryPieEmpty" class="deep-pie-empty">暂无分类数据</p>
+                                </div>
+                                <p class="deep-scan-subhint">取消勾选某类别或收窄日期后，下方列表与「已选中」数量会同步更新。</p>
+                                <div id="deepCategoryTags" class="deep-scan-categories"></div>
+                                <div id="deepScanEmailList" class="deep-scan-list-wrap"></div>
+                                <p id="deepScanSelectedCount" class="deep-scan-count" aria-live="polite"></p>
                             </div>
-                            <span class="cookie-pill" id="cookiePill">未检查</span>
-                        </div>
-                        <div class="cookie-editor">
-                            <textarea id="emailCookies" placeholder='[{"name": "...", "value": "...", "domain": "..."}]'></textarea>
-                        </div>
-                        <div class="cookie-actions">
-                            <button class="action-chip" id="cookieStatusBtn" onclick="checkCookieStatus()">
-                                <span class="chip-mark" id="cookieIcon">CK</span>
-                                <span id="cookieLabel">检查状态</span>
+                            <button type="button" class="btn-primary" id="analyzeSelectedBtn" onclick="runAnalyzeSelected()" disabled>
+                                <span class="spinner"></span>
+                                <span class="btn-label">开始分析选中的邮件</span>
                             </button>
-                            <button class="btn-save" type="button" onclick="saveCookieOnly()">保存 Cookie</button>
                         </div>
                     </section>
                 </div>
@@ -1776,7 +2489,10 @@
                             <small>Output Archive</small>
                             <h2>查询结果</h2>
                         </div>
-                        <button class="btn-clear-results" onclick="clearAllResults()">清空全部</button>
+                        <div class="results-history-actions">
+                            <button type="button" class="btn-clear-results" onclick="collapseAllResultEntries()">全部折叠</button>
+                            <button type="button" class="btn-clear-results" onclick="clearAllResults()">清空全部</button>
+                        </div>
                     </div>
                     <div class="results-entries" id="resultsEntries"></div>
                 </div>
@@ -1794,23 +2510,19 @@
 
             <div class="tutorial-section">
                 <h3>1. 配置 AI 服务</h3>
-                <p>点击顶部的“配置”，填写 AI Base URL、API Key 和模型名称。保存后立即生效。</p>
+                <p>点击顶部的“配置”，填写 AI Base URL 和模型名称。API Key 为<strong>可选</strong>（留空将自动使用系统托管的 AI 服务）。保存后立即生效。</p>
                 <code class="code-block">"ai": {
   "base_url": "https://api.openai.com/v1",
-  "api_key": "sk-...",
+  "api_key": "sk-... (可选)",
   "model": "gpt-4o-mini"
 }</code>
             </div>
 
             <div class="tutorial-section">
-                <h3>2. 导入 Cookie</h3>
-                <ol>
-                    <li>在 Chrome 或 Edge 中安装 Cookie-Editor。</li>
-                    <li>登录 <a href="https://mail.xjtlu.edu.cn/owa" target="_blank" rel="noopener">mail.xjtlu.edu.cn</a>。</li>
-                    <li>使用 Export as JSON 导出 Cookie。</li>
-                    <li>把内容粘贴到配置弹窗中的 Cookie 字段。</li>
-                </ol>
-                <p>如果 Cookie 失效，可重新导出后覆盖保存。</p>
+                <h3>2. 连接邮箱（Cookie）</h3>
+                <p><strong>推荐：</strong>在首页「连接邮箱」区域点击「打开邮箱登录窗口」，在本机 Edge 中完成登录后点「我已登录」。</p>
+                <p><strong>高级：</strong>在 Chrome 或 Edge 安装 Cookie-Editor，登录邮箱后 Export as JSON，粘贴到「高级：直接粘贴 Cookie」文本框并保存。</p>
+                <p>如果 Cookie 失效，可重新走上述流程覆盖保存。</p>
             </div>
 
             <div class="tutorial-section">
@@ -1829,22 +2541,71 @@
             <button class="close" onclick="closeHeroEditModal()">&times;</button>
             <h2 class="modal-heading">自定义主标语</h2>
             <p class="modal-description">
-                可自由选择展示方式；颜色、字号、分段均可自定义（HTML 模式）。内容仅保存在本机浏览器。
+                在下面输入整句标语，可选填要高亮的一段并选颜色；无需懂代码。也可展开「高级」使用 Markdown/HTML。内容仅保存在本机浏览器。
             </p>
             <div class="settings-form">
-                <div class="input-group">
-                    <label for="heroEditMode">展示方式</label>
-                    <select id="heroEditMode">
-                        <option value="plain">纯文本（转义后显示，支持换行）</option>
-                        <option value="markdown">Markdown（粗体、链接、标题等）</option>
-                        <option value="html">HTML（任意样式，如 &lt;span style="color:#e91e63"&gt;彩色&lt;/span&gt;）</option>
-                    </select>
+                <label class="hero-use-advanced" for="heroUseAdvanced">
+                    <input type="checkbox" id="heroUseAdvanced" />
+                    <span>使用高级自定义（Markdown / HTML）替代上面的简易排版</span>
+                </label>
+
+                <div id="heroSimpleBlock" class="hero-simple-fields">
+                    <div class="input-group">
+                        <label for="heroSimpleText">标语文字</label>
+                        <input type="text" id="heroSimpleText" placeholder="例如：狗修金sama，快来处理邮件吧" autocomplete="off" />
+                    </div>
+                    <div class="input-group">
+                        <label for="heroSimpleHighlight">要高亮的文字（可选）</label>
+                        <input type="text" id="heroSimpleHighlight" placeholder="在上一句里完整出现的一段，例如：快来处理" autocomplete="off" />
+                    </div>
+                    <div class="input-group">
+                        <label for="heroSimpleSize">字号</label>
+                        <select id="heroSimpleSize">
+                            <option value="sm">较小</option>
+                            <option value="md" selected>标准</option>
+                            <option value="lg">较大</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <span class="label-like">高亮颜色</span>
+                        <div class="hero-color-row">
+                            <div class="hero-color-presets" id="heroColorPresets">
+                                <button type="button" class="hero-preset-btn" data-accent="var(--accent)" data-fallback-hex="#0f8f66">主题绿</button>
+                                <button type="button" class="hero-preset-btn" data-accent="#e91e63" data-fallback-hex="#e91e63">粉</button>
+                                <button type="button" class="hero-preset-btn" data-accent="#ff9800" data-fallback-hex="#ff9800">橙</button>
+                                <button type="button" class="hero-preset-btn" data-accent="#2196f3" data-fallback-hex="#2196f3">蓝</button>
+                                <button type="button" class="hero-preset-btn" data-accent="#9c27b0" data-fallback-hex="#9c27b0">紫</button>
+                            </div>
+                            <div class="hero-color-picker-wrap">
+                                <span>自定义</span>
+                                <input type="color" id="heroAccentHexPicker" value="#0f8f66" title="自定义颜色（十六进制）" />
+                            </div>
+                        </div>
+                        <input type="hidden" id="heroAccentCss" value="var(--accent)" />
+                    </div>
+                    <div class="hero-edit-preview-wrap">
+                        <div class="hero-edit-preview-label">预览</div>
+                        <div id="heroEditPreview" class="hero-edit-preview-title hero-size-md" aria-hidden="true"></div>
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label for="heroEditContent">内容</label>
-                    <textarea id="heroEditContent" rows="10" placeholder="在此输入主标语…" style="width:100%; min-height:200px; padding:12px 14px; font:inherit; line-height:1.55;"></textarea>
-                </div>
-                <p class="field-note" style="margin-top:-4px;">HTML 会移除 script/iframe 等危险标签；仍可用内联 style、class。主题色变量：<code>var(--accent)</code>、<code>var(--text-strong)</code>。</p>
+
+                <details class="advanced-settings hero-advanced-details" id="heroAdvancedDetails">
+                    <summary>高级自定义（Markdown / HTML）</summary>
+                    <div class="input-group advanced-format-group">
+                        <label for="heroAdvancedFormat">格式</label>
+                        <select id="heroAdvancedFormat">
+                            <option value="plain">纯文本（换行保留）</option>
+                            <option value="markdown">Markdown</option>
+                            <option value="html">HTML</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label for="heroEditContent">内容</label>
+                        <textarea id="heroEditContent" rows="6" placeholder="高级模式下的内容…"></textarea>
+                    </div>
+                    <p class="field-note">HTML 会移除 script/iframe 等危险标签；仍可使用安全内联 style。主题色：<code>var(--accent)</code>。</p>
+                </details>
+
                 <div class="modal-footer modal-footer-spaced">
                     <button type="button" class="btn-secondary" onclick="resetHeroTitle()">恢复默认</button>
                     <div class="flex-gap-10">
@@ -1863,16 +2624,25 @@
 
             <div class="settings-form">
                 <div class="input-group">
+                    <label for="usernameInput">显示用户名</label>
+                    <div class="username-edit-row">
+                        <input type="text" id="usernameInput" placeholder="输入新的用户名" class="username-edit-input">
+                        <button type="button" class="btn-save username-edit-btn" onclick="updateUsername()">修改</button>
+                    </div>
+                </div>
+
+                <div class="input-group">
                     <label for="aiBaseUrl">AI Base URL</label>
                     <input type="text" id="aiBaseUrl" placeholder="https://api.openai.com/v1">
                 </div>
 
                 <div class="input-group">
-                    <label for="aiApiKey">AI API Key</label>
+                    <label for="aiApiKey">AI API Key <span class="optional-label">(可选)</span></label>
                     <div class="password-wrapper">
-                        <input type="password" id="aiApiKey" placeholder="sk-...">
+                        <input type="password" id="aiApiKey" placeholder="留空将自动使用系统托管服务">
                         <button class="password-toggle" type="button" onclick="toggleApiKeyVisibility()" title="显示或隐藏">SHOW</button>
                     </div>
+                    <div class="field-note field-note-spaced">如不填写，系统将默认使用全局配置的 DeepSeek 接口。</div>
                 </div>
 
                 <div class="input-group">
@@ -1880,11 +2650,39 @@
                     <input type="text" id="aiModel" placeholder="gpt-4o-mini">
                 </div>
 
+                <div class="prelaunch-row">
+                    <div class="prelaunch-info">
+                        <span class="prelaunch-label">启动时自动连接浏览器</span>
+                        <span class="prelaunch-hint">开启后，应用启动时会自动打开浏览器并登录邮箱，减少首次查询等待。</span>
+                    </div>
+                    <label class="toggle-switch" for="prelaunchToggle">
+                        <input type="checkbox" id="prelaunchToggle" onchange="togglePrelaunch()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
                 <details class="advanced-settings">
                     <summary>高级设置</summary>
                     <div class="input-group">
                         <label for="emailUrl">邮箱 URL</label>
                         <input type="text" id="emailUrl" placeholder="https://mail.xjtlu.edu.cn/owa">
+                    </div>
+                </details>
+
+                <details class="advanced-settings dev-settings-details">
+                    <summary>开发者测试</summary>
+                    <p class="dev-extract-hint">用于验证列表与正文提取；使用主界面「搜索关键词」与当前 Cookie。测试 1 会将结果写入 <code>src/</code> 下 txt。</p>
+                    <div class="dev-extract-block dev-extract-in-modal">
+                        <button type="button" class="btn-secondary" id="devExtractBodiesBtn" onclick="devExtractSampleBodies()">
+                            测试 1：提取全量（最多 100 封）正文（不调 LLM）
+                        </button>
+                        <p class="dev-extract-hint">深度拉列表（最多 100 封）时先滚回列表顶部再小步增量收集；顺序与收件箱一致、不按日期重排，并对 data-convid 去重；提取前按 convid 重新定位行。</p>
+                        <pre id="devExtractBodiesPre" class="dev-extract-pre" aria-live="polite"></pre>
+                        <button type="button" class="btn-secondary" id="devExtractDailyBtn" onclick="devExtractDailyBodiesNoLlm()">
+                            测试 2：日常流程提取正文（不调 LLM）
+                        </button>
+                        <p class="dev-extract-hint">与主界面「日常模式」相同：<code>search_emails(mode=daily)</code> + 逐封 <code>extract_full_body</code>，最多 10 封；使用主界面「搜索关键词」与「处理邮件数量」（超过 10 按 10 计）。仅在下框展示正文，不写文件。</p>
+                        <pre id="devExtractDailyPre" class="dev-extract-pre" aria-live="polite"></pre>
                     </div>
                 </details>
 
@@ -1899,6 +2697,9 @@
     <div class="toast" id="globalToast"></div>
 
     <script>
+        window.deepScanData = null;
+        const DEEP_MAX_EMAILS = 100;
+
         function escapeHtml(value) {
             return String(value ?? "")
                 .replace(/&/g, "&amp;")
@@ -1908,14 +2709,86 @@
                 .replace(/'/g, "&#39;");
         }
 
+        function syncRunButtonLabel() {
+            const mode = document.querySelector('input[name="runMode"]:checked').value;
+            const runBtn = document.getElementById("runBtn");
+            if (!runBtn) return;
+            const lbl = runBtn.querySelector(".btn-label");
+            if (mode === "deep") {
+                lbl.textContent = window.deepScanData ? "重新深度扫描" : "深度扫描（" + DEEP_MAX_EMAILS + " 封）";
+            } else {
+                lbl.textContent = "开始智能分析";
+            }
+        }
+
+        function updateMailCountLimit() {
+            const mode = document.querySelector('input[name="runMode"]:checked').value;
+            const inputEl = document.getElementById("emailCount");
+            const hintEl = document.getElementById("emailCountHint");
+            const emailCountGroup = document.getElementById("emailCountGroup");
+            const deepScanPanel = document.getElementById("deepScanPanel");
+            const analyzeBtn = document.getElementById("analyzeSelectedBtn");
+            const deepScanResults = document.getElementById("deepScanResults");
+            const currentVal = parseInt(inputEl.value) || 10;
+
+            if (mode === "deep") {
+                inputEl.max = DEEP_MAX_EMAILS;
+                hintEl.textContent = "深度模式请使用下方两步：先「深度扫描」拉列表，再筛选后「开始分析选中的邮件」（单次分析最多 " + DEEP_MAX_EMAILS + " 封）。";
+                if (emailCountGroup) emailCountGroup.style.display = "none";
+                if (deepScanPanel) deepScanPanel.style.display = "block";
+            } else {
+                inputEl.max = 10;
+                hintEl.textContent = "范围 1-10。LLM 会按每批 3 封并行处理，再做 1 次总汇总。";
+                if (currentVal > 10) {
+                    inputEl.value = 10;
+                }
+                if (emailCountGroup) emailCountGroup.style.display = "";
+                if (deepScanPanel) deepScanPanel.style.display = "none";
+                if (analyzeBtn) {
+                    analyzeBtn.style.display = "none";
+                    analyzeBtn.disabled = true;
+                }
+                if (deepScanResults) deepScanResults.style.display = "none";
+                window.deepScanData = null;
+                clearDeepCategoryPieChart();
+            }
+            syncRunButtonLabel();
+        }
+
+        function enforceMailCountLimit() {
+            const mode = document.querySelector('input[name="runMode"]:checked').value;
+            const inputEl = document.getElementById("emailCount");
+            const limit = mode === "deep" ? DEEP_MAX_EMAILS : 10;
+            let val = parseInt(inputEl.value);
+            
+            if (!isNaN(val) && val > limit) {
+                inputEl.value = limit;
+            }
+        }
+
         const HERO_LEGACY_KEY = "mail_assistant_hero_title";
         const HERO_V2_KEY = "mail_assistant_hero_v2";
+        const HERO_V3_KEY = "mail_assistant_hero_v3";
 
-        const DEFAULT_HERO_V2 = {
-            mode: "html",
-            content:
-                '<span>狗修金sama，</span><span style="color:var(--accent)">快来处理</span><span>邮件吧</span>'
+        const DEFAULT_HERO_V3 = {
+            version: 3,
+            uiMode: "simple",
+            simple: {
+                text: "狗修金sama，快来处理邮件吧",
+                highlight: "快来处理",
+                accentColor: "var(--accent)",
+                size: "md"
+            },
+            advanced: {
+                format: "html",
+                content:
+                    '<span>狗修金sama，</span><span style="color:var(--accent)">快来处理</span><span>邮件吧</span>'
+            }
         };
+
+        function cloneDefaultHero() {
+            return JSON.parse(JSON.stringify(DEFAULT_HERO_V3));
+        }
 
         function migrateLegacyHeroTitleOnce() {
             if (localStorage.getItem(HERO_V2_KEY)) return;
@@ -1935,18 +2808,98 @@
             }
         }
 
-        function loadHeroV2FromStorage() {
+        function migrateV2ToV3() {
+            if (localStorage.getItem(HERO_V3_KEY)) return;
             migrateLegacyHeroTitleOnce();
             const raw = localStorage.getItem(HERO_V2_KEY);
-            if (!raw) return { ...DEFAULT_HERO_V2 };
+            if (!raw) return;
             try {
                 const o = JSON.parse(raw);
-                const mode = ["plain", "markdown", "html"].includes(o.mode) ? o.mode : "plain";
-                const content = typeof o.content === "string" ? o.content : DEFAULT_HERO_V2.content;
-                return { mode, content };
+                const v3 = cloneDefaultHero();
+                if (o.mode === "html" && typeof o.content === "string") {
+                    v3.advanced = { format: "html", content: o.content };
+                    const div = document.createElement("div");
+                    div.innerHTML = o.content;
+                    const fullText = (div.textContent || "").replace(/\s+/g, " ").trim();
+                    if (fullText) v3.simple.text = fullText;
+                    const accentEl = div.querySelector(".hero-title-accent, span[style*='color']");
+                    if (accentEl) {
+                        const hl = (accentEl.textContent || "").trim();
+                        if (hl) v3.simple.highlight = hl;
+                        const st = accentEl.getAttribute("style") || "";
+                        const m = st.match(/color\s*:\s*([^;]+)/i);
+                        if (m) v3.simple.accentColor = m[1].trim();
+                    }
+                } else {
+                    const fmt = ["plain", "markdown", "html"].includes(o.mode) ? o.mode : "markdown";
+                    const content = typeof o.content === "string" ? o.content : "";
+                    v3.advanced = { format: fmt, content };
+                    const plain = content.replace(/\n/g, " ").trim();
+                    if (plain) v3.simple.text = plain.slice(0, 500);
+                    v3.uiMode = "advanced";
+                }
+                localStorage.setItem(HERO_V3_KEY, JSON.stringify(v3));
             } catch {
-                return { ...DEFAULT_HERO_V2 };
+                /* ignore */
             }
+        }
+
+        function loadHeroV3FromStorage() {
+            migrateV2ToV3();
+            const raw = localStorage.getItem(HERO_V3_KEY);
+            if (!raw) return cloneDefaultHero();
+            try {
+                const o = JSON.parse(raw);
+                const merged = cloneDefaultHero();
+                merged.uiMode = o.uiMode === "advanced" ? "advanced" : "simple";
+                merged.simple = { ...merged.simple, ...(o.simple || {}) };
+                merged.advanced = { ...merged.advanced, ...(o.advanced || {}) };
+                if (!["sm", "md", "lg"].includes(merged.simple.size)) merged.simple.size = "md";
+                const af = merged.advanced.format;
+                merged.advanced.format = ["plain", "markdown", "html"].includes(af) ? af : "html";
+                return merged;
+            } catch {
+                return cloneDefaultHero();
+            }
+        }
+
+        function sanitizeHeroColorCss(color) {
+            const c = String(color ?? "").trim();
+            if (!c) return "var(--accent)";
+            if (/^var\(--[a-zA-Z0-9_-]+\)\s*$/.test(c)) return c;
+            if (/^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(c)) return c;
+            if (/^rgba?\([^)]+\)$/i.test(c)) return c;
+            if (/^hsla?\([^)]+\)$/i.test(c)) return c;
+            return "var(--accent)";
+        }
+
+        function buildSimpleHeroHtml(simple) {
+            const text = simple.text ?? "";
+            const highlight = (simple.highlight || "").trim();
+            const color = sanitizeHeroColorCss(simple.accentColor);
+            if (!highlight) {
+                return `<span>${escapeHtml(text)}</span>`;
+            }
+            const idx = text.indexOf(highlight);
+            if (idx === -1) {
+                return `<span>${escapeHtml(text)}</span>`;
+            }
+            const before = escapeHtml(text.slice(0, idx));
+            const mid = escapeHtml(highlight);
+            const after = escapeHtml(text.slice(idx + highlight.length));
+            return `${before}<span class="hero-title-accent" style="color:${color}">${mid}</span>${after}`;
+        }
+
+        function computeHeroHtmlFromState(state) {
+            if (state.uiMode === "advanced") {
+                const s = state.advanced;
+                const fmt = s.format || "html";
+                const c = typeof s.content === "string" ? s.content : "";
+                if (fmt === "plain") return escapeHtml(c).replace(/\n/g, "<br>");
+                if (fmt === "markdown") return sanitizeHeroHtml(parseMarkdownToHtml(c));
+                return sanitizeHeroHtml(c);
+            }
+            return buildSimpleHeroHtml(state.simple);
         }
 
         function sanitizeHeroHtml(html) {
@@ -1980,26 +2933,87 @@
         function renderHeroTitle(state) {
             const h = document.getElementById("heroTitle");
             if (!h) return;
-            const s = state || loadHeroV2FromStorage();
-            let html = "";
-            if (s.mode === "plain") {
-                html = escapeHtml(s.content).replace(/\n/g, "<br>");
-            } else if (s.mode === "markdown") {
-                html = sanitizeHeroHtml(parseMarkdownToHtml(s.content));
-            } else {
-                html = sanitizeHeroHtml(s.content);
-            }
+            const full = state || loadHeroV3FromStorage();
+            const html = computeHeroHtmlFromState(full);
             h.innerHTML = html.trim() ? html : "<span>&nbsp;</span>";
+            const size = full.simple && full.simple.size ? full.simple.size : "md";
+            h.className = `hero-title-custom hero-size-${size}`;
+        }
+
+        function syncHeroAccentPresetUi(accentCss) {
+            const hidden = document.getElementById("heroAccentCss");
+            const picker = document.getElementById("heroAccentHexPicker");
+            if (!hidden || !picker) return;
+            hidden.value = accentCss;
+            const presets = document.querySelectorAll(".hero-preset-btn");
+            presets.forEach((b) => b.classList.toggle("is-active", b.dataset.accent === accentCss));
+            if (/^#[0-9a-f]{6}$/i.test(accentCss)) {
+                picker.value = accentCss.toLowerCase();
+            } else {
+                picker.value = "#0f8f66";
+            }
+        }
+
+        function updateHeroEditPreview() {
+            const el = document.getElementById("heroEditPreview");
+            const useAdvEl = document.getElementById("heroUseAdvanced");
+            if (!el || !useAdvEl) return;
+            const useAdv = useAdvEl.checked;
+            if (useAdv) {
+                const formatEl = document.getElementById("heroAdvancedFormat");
+                const contentEl = document.getElementById("heroEditContent");
+                const format = formatEl ? formatEl.value : "html";
+                const content = contentEl ? contentEl.value : "";
+                let html = "";
+                if (format === "plain") html = escapeHtml(content).replace(/\n/g, "<br>");
+                else if (format === "markdown") html = sanitizeHeroHtml(parseMarkdownToHtml(content));
+                else html = sanitizeHeroHtml(content);
+                el.innerHTML = html.trim() ? html : "<span>&nbsp;</span>";
+                el.className = "hero-edit-preview-title hero-size-md";
+            } else {
+                const textEl = document.getElementById("heroSimpleText");
+                const hiEl = document.getElementById("heroSimpleHighlight");
+                const sizeEl = document.getElementById("heroSimpleSize");
+                const accentEl = document.getElementById("heroAccentCss");
+                const simple = {
+                    text: textEl ? textEl.value : "",
+                    highlight: hiEl ? hiEl.value : "",
+                    accentColor: accentEl ? accentEl.value : "var(--accent)",
+                    size: sizeEl ? sizeEl.value : "md"
+                };
+                el.className = `hero-edit-preview-title hero-size-${simple.size}`;
+                const inner = buildSimpleHeroHtml(simple);
+                el.innerHTML = inner.trim() ? inner : "<span>&nbsp;</span>";
+            }
+        }
+
+        function setHeroSimpleBlockDisabled(disabled) {
+            const block = document.getElementById("heroSimpleBlock");
+            if (!block) return;
+            block.style.opacity = disabled ? "0.55" : "1";
+            block.style.pointerEvents = disabled ? "none" : "auto";
+            block.setAttribute("aria-disabled", disabled ? "true" : "false");
         }
 
         function openHeroEditModal() {
-            const s = loadHeroV2FromStorage();
-            const modeEl = document.getElementById("heroEditMode");
-            const contentEl = document.getElementById("heroEditContent");
+            const s = loadHeroV3FromStorage();
             const modal = document.getElementById("heroEditModal");
-            if (!modeEl || !contentEl || !modal) return;
-            modeEl.value = s.mode;
-            contentEl.value = s.content;
+            const useAdv = document.getElementById("heroUseAdvanced");
+            const txt = document.getElementById("heroSimpleText");
+            const hi = document.getElementById("heroSimpleHighlight");
+            const size = document.getElementById("heroSimpleSize");
+            const fmt = document.getElementById("heroAdvancedFormat");
+            const content = document.getElementById("heroEditContent");
+            if (!modal || !useAdv || !txt || !hi || !size || !fmt || !content) return;
+            useAdv.checked = s.uiMode === "advanced";
+            txt.value = s.simple.text;
+            hi.value = s.simple.highlight;
+            size.value = s.simple.size || "md";
+            syncHeroAccentPresetUi(s.simple.accentColor || "var(--accent)");
+            fmt.value = s.advanced.format || "html";
+            content.value = s.advanced.content || "";
+            setHeroSimpleBlockDisabled(s.uiMode === "advanced");
+            updateHeroEditPreview();
             modal.style.display = "block";
         }
 
@@ -2009,10 +3023,23 @@
         }
 
         function saveHeroTitle() {
-            const mode = document.getElementById("heroEditMode").value;
-            const content = document.getElementById("heroEditContent").value;
-            const payload = { mode, content };
-            localStorage.setItem(HERO_V2_KEY, JSON.stringify(payload));
+            const useAdv = document.getElementById("heroUseAdvanced").checked;
+            const payload = {
+                version: 3,
+                uiMode: useAdv ? "advanced" : "simple",
+                simple: {
+                    text: document.getElementById("heroSimpleText").value,
+                    highlight: document.getElementById("heroSimpleHighlight").value,
+                    accentColor: document.getElementById("heroAccentCss").value,
+                    size: document.getElementById("heroSimpleSize").value
+                },
+                advanced: {
+                    format: document.getElementById("heroAdvancedFormat").value,
+                    content: document.getElementById("heroEditContent").value
+                }
+            };
+            localStorage.setItem(HERO_V3_KEY, JSON.stringify(payload));
+            localStorage.removeItem(HERO_V2_KEY);
             localStorage.removeItem(HERO_LEGACY_KEY);
             renderHeroTitle(payload);
             closeHeroEditModal();
@@ -2020,14 +3047,62 @@
         }
 
         function resetHeroTitle() {
+            localStorage.removeItem(HERO_V3_KEY);
             localStorage.removeItem(HERO_V2_KEY);
             localStorage.removeItem(HERO_LEGACY_KEY);
-            renderHeroTitle({ ...DEFAULT_HERO_V2 });
-            const modeEl = document.getElementById("heroEditMode");
-            const contentEl = document.getElementById("heroEditContent");
-            if (modeEl) modeEl.value = DEFAULT_HERO_V2.mode;
-            if (contentEl) contentEl.value = DEFAULT_HERO_V2.content;
+            const d = cloneDefaultHero();
+            renderHeroTitle(d);
+            const useAdv = document.getElementById("heroUseAdvanced");
+            const txt = document.getElementById("heroSimpleText");
+            const hi = document.getElementById("heroSimpleHighlight");
+            const size = document.getElementById("heroSimpleSize");
+            const fmt = document.getElementById("heroAdvancedFormat");
+            const content = document.getElementById("heroEditContent");
+            if (useAdv) useAdv.checked = false;
+            if (txt) txt.value = d.simple.text;
+            if (hi) hi.value = d.simple.highlight;
+            if (size) size.value = d.simple.size;
+            syncHeroAccentPresetUi(d.simple.accentColor);
+            if (fmt) fmt.value = d.advanced.format;
+            if (content) content.value = d.advanced.content;
+            setHeroSimpleBlockDisabled(false);
+            updateHeroEditPreview();
             showToast("已恢复默认标语");
+        }
+
+        function wireHeroEditModal() {
+            const useAdv = document.getElementById("heroUseAdvanced");
+            if (useAdv) {
+                useAdv.addEventListener("change", () => {
+                    setHeroSimpleBlockDisabled(useAdv.checked);
+                    updateHeroEditPreview();
+                });
+            }
+            ["heroSimpleText", "heroSimpleHighlight", "heroSimpleSize"].forEach((id) => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener("input", updateHeroEditPreview);
+            });
+            const fmt = document.getElementById("heroAdvancedFormat");
+            const ta = document.getElementById("heroEditContent");
+            if (fmt) fmt.addEventListener("change", updateHeroEditPreview);
+            if (ta) ta.addEventListener("input", updateHeroEditPreview);
+            document.querySelectorAll(".hero-preset-btn").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    const acc = btn.dataset.accent;
+                    if (acc) syncHeroAccentPresetUi(acc);
+                    updateHeroEditPreview();
+                });
+            });
+            const picker = document.getElementById("heroAccentHexPicker");
+            if (picker) {
+                picker.addEventListener("input", () => {
+                    const hex = picker.value;
+                    const hidden = document.getElementById("heroAccentCss");
+                    if (hidden) hidden.value = hex;
+                    document.querySelectorAll(".hero-preset-btn").forEach((b) => b.classList.remove("is-active"));
+                    updateHeroEditPreview();
+                });
+            }
         }
 
         function initTheme() {
@@ -2046,14 +3121,254 @@
             document.documentElement.setAttribute("data-theme", theme);
             document.getElementById("themeIcon").textContent = theme === "dark" ? "LT" : "DK";
             document.getElementById("themeLabel").textContent = theme === "dark" ? "浅色模式" : "深色模式";
+            if (window.deepScanData && window.deepScanData.categories) {
+                renderDeepCategoryPieChart(
+                    window.deepScanData.categories,
+                    window.deepScanData.list_count
+                );
+            }
         }
 
         initTheme();
 
-        (function showWelcomeBanner() {
+        function _deepPieBgBorder() {
+            const el = document.documentElement;
+            const bg = getComputedStyle(el).getPropertyValue("--bg-elevated").trim() || "#ffffff";
+            const border = getComputedStyle(el).getPropertyValue("--border").trim() || "rgba(0,0,0,0.08)";
+            return { bg, border };
+        }
+
+        let _deepPieResizeTimer = null;
+        function scheduleDeepPieResize() {
+            if (_deepPieResizeTimer) clearTimeout(_deepPieResizeTimer);
+            _deepPieResizeTimer = setTimeout(function () {
+                if (window._deepCategoryChartInstance) {
+                    try {
+                        window._deepCategoryChartInstance.resize();
+                    } catch (e) {}
+                }
+            }, 120);
+        }
+        window.addEventListener("resize", scheduleDeepPieResize);
+
+        function clearDeepCategoryPieChart() {
+            if (window._deepCategoryChartInstance) {
+                try {
+                    window._deepCategoryChartInstance.dispose();
+                } catch (e) {}
+                window._deepCategoryChartInstance = null;
+            }
+            const chartEl = document.getElementById("deepCategoryPieChart");
+            const emptyEl = document.getElementById("deepCategoryPieEmpty");
+            if (chartEl) chartEl.style.display = "none";
+            if (emptyEl) {
+                emptyEl.style.display = "none";
+                emptyEl.textContent = "暂无分类数据";
+            }
+        }
+
+        function renderDeepCategoryPieChart(categories, listCount) {
+            const chartEl = document.getElementById("deepCategoryPieChart");
+            const emptyEl = document.getElementById("deepCategoryPieEmpty");
+            if (!chartEl || !emptyEl) return;
+
+            if (window._deepCategoryChartInstance) {
+                try {
+                    window._deepCategoryChartInstance.dispose();
+                } catch (e) {}
+                window._deepCategoryChartInstance = null;
+            }
+
+            if (typeof echarts === "undefined") {
+                chartEl.style.display = "none";
+                emptyEl.style.display = "block";
+                emptyEl.textContent = "图表库加载失败，请刷新页面重试";
+                return;
+            }
+
+            const raw = categories || {};
+            const entries = Object.keys(raw)
+                .map(function (k) {
+                    return [k, Number(raw[k]) || 0];
+                })
+                .filter(function (x) {
+                    return x[1] > 0;
+                });
+            const total = entries.reduce(function (s, x) {
+                return s + x[1];
+            }, 0);
+            const n = typeof listCount === "number" ? listCount : total;
+
+            if (n === 0 || total === 0 || entries.length === 0) {
+                chartEl.style.display = "none";
+                emptyEl.style.display = "block";
+                emptyEl.textContent = "暂无分类数据";
+                return;
+            }
+
+            emptyEl.style.display = "none";
+            chartEl.style.display = "block";
+
+            const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+            const textMain = isDark ? "#ced8d1" : "#31413a";
+            const textMuted = isDark ? "#95a39b" : "#68766f";
+            const palette = isDark
+                ? ["#2ab081", "#4ecdc4", "#7dd3a8", "#a8c5a0", "#ffd666", "#a78bfa", "#94a3b8"]
+                : ["#0f8f66", "#1a9c8a", "#2d8a6e", "#4a9b7a", "#c27a12", "#5c6bc0", "#8e9aaf"];
+            const { bg: pieBg, border: pieBorder } = _deepPieBgBorder();
+
+            const chart = echarts.init(chartEl);
+            window._deepCategoryChartInstance = chart;
+
+            chart.setOption({
+                color: palette,
+                animationDuration: 520,
+                tooltip: {
+                    trigger: "item",
+                    formatter: "{b}: {c} ({d}%)",
+                    backgroundColor: isDark ? "rgba(24,33,29,0.94)" : "rgba(255,255,255,0.96)",
+                    borderColor: pieBorder,
+                    borderWidth: 1,
+                    textStyle: { color: textMain, fontSize: 13 },
+                },
+                legend: {
+                    type: "scroll",
+                    bottom: 4,
+                    left: "center",
+                    width: "92%",
+                    textStyle: { color: textMuted, fontSize: 11 },
+                    pageIconColor: textMuted,
+                    pageTextStyle: { color: textMuted },
+                },
+                series: [
+                    {
+                        name: "分类",
+                        type: "pie",
+                        radius: ["42%", "68%"],
+                        center: ["50%", "44%"],
+                        avoidLabelOverlap: true,
+                        itemStyle: {
+                            borderRadius: 6,
+                            borderColor: pieBg,
+                            borderWidth: 2,
+                        },
+                        label: {
+                            color: textMuted,
+                            fontSize: 11,
+                            formatter: "{b}\n{d}%",
+                        },
+                        emphasis: {
+                            label: { fontWeight: 600, color: textMain },
+                            itemStyle: {
+                                shadowBlur: 12,
+                                shadowColor: "rgba(15, 143, 102, 0.35)",
+                            },
+                        },
+                        data: entries.map(function (x) {
+                            return { name: x[0], value: x[1] };
+                        }),
+                    },
+                ],
+            });
+            scheduleDeepPieResize();
+        }
+
+        function renderStartupWelcomeBanner(message, variant) {
             const container = document.getElementById("welcomeBanner");
-            container.innerHTML = "";
-        })();
+            if (!container) return;
+            if (!message || variant === "none") {
+                container.innerHTML = "";
+                return;
+            }
+            const cls = variant === "bad" ? "reminder" : variant === "warn" ? "reminder" : "info";
+            const safe = escapeHtml(message);
+            container.innerHTML = `
+                <div class="welcome-banner ${cls}" id="startupCookieBanner">
+                    <span>${safe}</span>
+                    <button type="button" class="banner-close" onclick="dismissStartupBanner()" aria-label="关闭">×</button>
+                </div>`;
+        }
+
+        function dismissStartupBanner() {
+            const container = document.getElementById("welcomeBanner");
+            if (container) container.innerHTML = "";
+        }
+
+        let startupCookiePollTimer = null;
+        let currentCookieStatus = "unknown";
+
+        function stopStartupCookiePoll() {
+            if (startupCookiePollTimer) {
+                clearTimeout(startupCookiePollTimer);
+                startupCookiePollTimer = null;
+            }
+        }
+
+        function applyAutoCookieFromStatus(d) {
+            const st = d.auto_cookie_status || "";
+            const msg = d.auto_cookie_message || "";
+            currentCookieStatus = st;
+            if (st === "skipped" || st === "suggest_check") {
+                setCookiePill(st === "suggest_check" ? "建议检查" : "未自动检查", st === "suggest_check" ? "warn" : "");
+                if (st === "suggest_check") {
+                    renderStartupWelcomeBanner(msg, "info");
+                    stopStartupCookiePoll();
+                } else {
+                    renderStartupWelcomeBanner("", "none");
+                }
+                return;
+            }
+            if (st === "valid") {
+                setCookiePill("自动检查：有效", "ok");
+                renderStartupWelcomeBanner(msg || "上线后已自动检查：Cookie 有效。", "info");
+                return;
+            }
+            if (st === "invalid") {
+                setCookiePill("自动检查：失效", "bad");
+                renderStartupWelcomeBanner(msg, "bad");
+                return;
+            }
+            if (st === "warning") {
+                setCookiePill("自动检查：异常", "warn");
+                renderStartupWelcomeBanner(msg, "warn");
+                return;
+            }
+            if (st === "error") {
+                setCookiePill("自动检查：失败", "bad");
+                renderStartupWelcomeBanner(msg, "bad");
+                return;
+            }
+            if (st === "pending" || st === "checking") {
+                setCookiePill(st === "checking" ? "Cookie检查中…" : "等待自动检查…", "warn");
+                renderStartupWelcomeBanner("", "none");
+            }
+        }
+
+        function scheduleAutoCookiePoll() {
+            const maxMs = 90000;
+            const step = 1200;
+            const t0 = Date.now();
+            async function tick() {
+                stopStartupCookiePoll();
+                try {
+                    const r = await fetch("/api/status");
+                    if (!r.ok) return;
+                    const d = await r.json();
+                    applyAutoCookieFromStatus(d);
+                    const st = d.auto_cookie_status || "";
+                    if (st === "pending" || st === "checking") {
+                        if (Date.now() - t0 < maxMs) {
+                            startupCookiePollTimer = setTimeout(tick, step);
+                        }
+                    }
+                } catch (e) {
+                    if (Date.now() - t0 < maxMs) {
+                        startupCookiePollTimer = setTimeout(tick, step);
+                    }
+                }
+            }
+            tick();
+        }
 
         function openModal() {
             document.getElementById("tutorialModal").style.display = "block";
@@ -2065,6 +3380,10 @@
 
         async function openSettingsModal() {
             document.getElementById("settingsModal").style.display = "block";
+            const userPillSplit = document.getElementById("userPillText").textContent.split("·");
+            if(userPillSplit.length > 0) {
+                document.getElementById("usernameInput").value = userPillSplit[0].trim();
+            }
             const btn = document.getElementById("saveConfigBtn");
             btn.textContent = "加载中...";
             btn.disabled = true;
@@ -2081,6 +3400,68 @@
             } finally {
                 btn.textContent = "保存配置";
                 btn.disabled = false;
+            }
+            // 加载预启动开关状态
+            try {
+                const plRes = await fetch("/api/prelaunch");
+                const plData = await plRes.json();
+                document.getElementById("prelaunchToggle").checked = !!plData.enabled;
+            } catch (e) {
+                console.warn("无法加载预启动状态:", e);
+            }
+        }
+
+        async function updateUsername() {
+            const newName = document.getElementById("usernameInput").value.trim();
+            if (!newName) {
+                showToast("用户名不能为空");
+                return;
+            }
+            try {
+                const res = await fetch("/api/auth/update_username", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ new_username: newName })
+                });
+                const data = await res.json();
+                if (data.status === "success" || data.status === "ok") {
+                    showToast("用户名已更新");
+                    const userPill = document.getElementById("userPillText");
+                    if (userPill) {
+                        const parts = userPill.textContent.split("·");
+                        if (parts.length > 1) {
+                            userPill.textContent = newName + " · " + parts[1].trim();
+                        } else {
+                            userPill.textContent = newName;
+                        }
+                    }
+                } else {
+                    showToast("更新失败: " + data.message);
+                }
+            } catch (e) {
+                showToast("请求错误: " + e.message);
+            }
+        }
+
+        async function togglePrelaunch() {
+            const toggle = document.getElementById("prelaunchToggle");
+            const enabled = toggle.checked;
+            try {
+                const res = await fetch("/api/prelaunch", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ enabled })
+                });
+                const data = await res.json();
+                if (data.status === "success") {
+                    showToast(data.message);
+                } else {
+                    showToast("设置失败: " + (data.message || "未知错误"));
+                    toggle.checked = !enabled;
+                }
+            } catch (e) {
+                showToast("请求失败: " + e.message);
+                toggle.checked = !enabled;
             }
         }
 
@@ -2136,6 +3517,20 @@
 
         var toastTimer = null;
 
+        function clearCookieEditor() {
+            const el = document.getElementById("emailCookies");
+            if (el) {
+                el.value = "";
+                el.focus();
+            }
+            const pill = document.getElementById("cookiePill");
+            if (pill) {
+                pill.className = "cookie-pill bad";
+                pill.textContent = "未载入";
+            }
+            showToast("Cookie 内容已清空");
+        }
+
         async function saveCookieOnly() {
             const cookieText = normalizeCookieTextareaValue(false);
             if (cookieText == null) {
@@ -2170,6 +3565,76 @@
             }
         }
 
+        async function startInteractiveMailLogin() {
+            const btn = document.getElementById("interactiveMailStartBtn");
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = "正在打开…";
+            }
+            try {
+                const res = await fetch("/api/mail/interactive_login/start", { method: "POST" });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && data.status === "success") {
+                    showToast(data.message || "请在打开的窗口中登录邮箱");
+                    setCookiePill("交互登录中", "warn");
+                } else {
+                    const msg = data.message || formatFastApiErrorDetail(data.detail) || ("HTTP " + res.status);
+                    showToast(msg);
+                }
+            } catch (e) {
+                showToast("请求失败: " + e.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = "打开邮箱登录窗口";
+                }
+            }
+        }
+
+        async function completeInteractiveMailLogin() {
+            const btn = document.getElementById("interactiveMailDoneBtn");
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = "保存中…";
+            }
+            try {
+                const res = await fetch("/api/mail/interactive_login/complete", { method: "POST" });
+                const data = await res.json().catch(() => ({}));
+                if (res.ok && data.status === "success") {
+                    currentCookieStatus = data.warning ? "warning" : "valid";
+                    showToast(data.message || "已保存邮箱会话");
+                    setCookiePill(data.warning ? "已保存（见提示）" : "已保存会话", data.warning ? "warn" : "ok");
+                    try {
+                        const confRes = await fetch("/api/config");
+                        const conf = await confRes.json();
+                        const ta = document.getElementById("emailCookies");
+                        if (ta) ta.value = conf.email_cookies || "";
+                    } catch (_) { /* ignore */ }
+                } else {
+                    const msg = data.message || formatFastApiErrorDetail(data.detail) || ("HTTP " + res.status);
+                    showToast(msg);
+                }
+            } catch (e) {
+                showToast("请求失败: " + e.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = "我已登录";
+                }
+            }
+        }
+
+        async function cancelInteractiveMailLogin() {
+            try {
+                const res = await fetch("/api/mail/interactive_login/cancel", { method: "POST" });
+                const data = await res.json().catch(() => ({}));
+                showToast(data.message || "已取消");
+                if (res.ok) setCookiePill("未检查", "");
+            } catch (e) {
+                showToast("取消失败: " + e.message);
+            }
+        }
+
         function formatFastApiErrorDetail(detail) {
             if (detail == null) return "";
             if (typeof detail === "string") return detail;
@@ -2197,8 +3662,68 @@
             }
         });
 
-        const HISTORY_KEY = "email_search_history";
+        (function () {
+            const origFetch = window.fetch;
+            window.fetch = function (input, init) {
+                init = init || {};
+                if (init.credentials === undefined) init.credentials = "same-origin";
+                return origFetch.call(this, input, init);
+            };
+        })();
+
+        let sessionEmail = "";
+        let HISTORY_KEY = "email_search_history";
+        let RESULTS_KEY = "email_query_results";
         const MAX_HISTORY = 10;
+
+        function updateStorageKeys() {
+            if (sessionEmail) {
+                HISTORY_KEY = "email_search_history:" + sessionEmail;
+                RESULTS_KEY = "email_query_results:" + sessionEmail;
+            } else {
+                HISTORY_KEY = "email_search_history";
+                RESULTS_KEY = "email_query_results";
+            }
+        }
+
+        function migrateLegacyLocalStorage(email) {
+            if (!email) return;
+            const legacyKeys = [
+                "email_search_history",
+                "email_query_results",
+                "last_email_process_time"
+            ];
+            legacyKeys.forEach((key) => {
+                const old = localStorage.getItem(key);
+                const scoped = localStorage.getItem(key + ":" + email);
+                if (old && !scoped) {
+                    localStorage.setItem(key + ":" + email, old);
+                }
+                // 迁移后删除旧的无后缀 key，防止其他用户登录时再次继承
+                if (old) {
+                    localStorage.removeItem(key);
+                }
+            });
+        }
+
+        async function initUserSession() {
+            try {
+                const r = await fetch("/api/auth/me");
+                if (r.ok) {
+                    const d = await r.json();
+                    sessionEmail = d.email || "";
+                    migrateLegacyLocalStorage(sessionEmail);
+                }
+            } catch (e) { /* ignore */ }
+            updateStorageKeys();
+        }
+
+        async function logout() {
+            try {
+                await fetch("/api/auth/logout", { method: "POST" });
+            } catch (e) { /* ignore */ }
+            window.location.href = "/login";
+        }
 
         function loadHistory() {
             try {
@@ -2208,7 +3733,19 @@
             }
         }
 
-        function saveToHistory(keyword, instruction, emailCount) {
+        function generateQueryId() {
+            if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+                return crypto.randomUUID();
+            }
+            return "q-" + Date.now() + "-" + Math.random().toString(36).slice(2, 12);
+        }
+
+        function normalizeKeywordForMatch(k) {
+            const s = String(k ?? "").trim();
+            return s === "" ? "(最新邮件)" : s;
+        }
+
+        function saveToHistory(keyword, instruction, emailCount, queryId) {
             const history = loadHistory();
             const exists = history.findIndex((h) => h.keyword === keyword && h.instruction === instruction && h.emailCount === emailCount);
             if (exists !== -1) history.splice(exists, 1);
@@ -2216,6 +3753,7 @@
                 keyword,
                 instruction,
                 emailCount,
+                queryId: queryId || null,
                 time: new Date().toLocaleString("zh-CN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
             });
             if (history.length > MAX_HISTORY) history.pop();
@@ -2231,29 +3769,97 @@
                 return;
             }
             container.innerHTML = history.map((h, i) =>
-                `<div class="history-chip" onclick="fillFromHistory(${i})" title="${escapeHtml(h.keyword || "")} - ${escapeHtml(h.instruction || "")}">
+                `<div class="history-chip" onclick="handleHistoryChipClick(event, ${i})" title="单击：定位到下方查询结果；Shift+单击：填入表单">
                     <span class="chip-keyword">${escapeHtml(h.keyword || "最新")}</span>
                     <span class="chip-time">${escapeHtml(h.time || "")}</span>
                 </div>`
             ).join("");
         }
 
+        function handleHistoryChipClick(event, index) {
+            if (event.shiftKey) {
+                event.preventDefault();
+                fillFromHistory(index);
+                return;
+            }
+            goToHistoryResult(index);
+        }
+
         function fillFromHistory(index) {
             const history = loadHistory();
             if (history[index]) {
-                document.getElementById("keyword").value = history[index].keyword;
-                document.getElementById("instruction").value = history[index].instruction;
-                document.getElementById("emailCount").value = history[index].emailCount || 10;
+                const h = history[index];
+                document.getElementById("keyword").value =
+                    h.keyword === "(最新邮件)" ? "" : h.keyword || "";
+                document.getElementById("instruction").value = h.instruction || "";
+                document.getElementById("emailCount").value = h.emailCount || 10;
                 document.getElementById("keyword").focus();
             }
+        }
+
+        function historyMatchesStoredResult(h, r) {
+            if (!keywordsMatch(r.keyword, h.keyword)) return false;
+            if ((r.instruction || "") !== (h.instruction || "")) return false;
+            if ((h.time || "") !== (r.time || "")) return false;
+            const hec = h.emailCount != null ? Number(h.emailCount) : 10;
+            const rec = r.emailCount != null ? Number(r.emailCount) : 10;
+            return hec === rec;
+        }
+
+        function keywordsMatch(a, b) {
+            return normalizeKeywordForMatch(a) === normalizeKeywordForMatch(b);
+        }
+
+        function findResultEntryForHistoryItem(h) {
+            const container = document.getElementById("resultsEntries");
+            if (!container) return null;
+            if (h.queryId) {
+                const byId = [...container.querySelectorAll(".result-entry")].find(
+                    (node) => node.getAttribute("data-query-id") === h.queryId
+                );
+                if (byId) return byId;
+            }
+            const results = loadResultsFromStorage();
+            const idx = results.findIndex((r) => historyMatchesStoredResult(h, r));
+            if (idx === -1) return null;
+            const entries = container.querySelectorAll(".result-entry");
+            return entries[idx] || null;
+        }
+
+        function goToHistoryResult(index) {
+            const history = loadHistory();
+            const h = history[index];
+            if (!h) return;
+            const el = findResultEntryForHistoryItem(h);
+            if (!el) {
+                showToast("该条记录已无对应查询结果，可能已被清空或已过期");
+                return;
+            }
+            const resultsHistory = document.getElementById("resultsHistory");
+            if (resultsHistory.classList.contains("results-hidden")) {
+                resultsHistory.classList.remove("results-hidden");
+            }
+            el.classList.remove("collapsed");
+            const t = el.querySelector(".result-entry-toggle");
+            if (t) t.setAttribute("aria-expanded", "true");
+            setTimeout(() => {
+                el.scrollIntoView({ behavior: "smooth", block: "center" });
+
+                // trigger reflow to reset animation if it's already there
+                el.classList.remove("flash-highlight");
+                void el.offsetWidth;
+                el.classList.add("flash-highlight");
+
+                setTimeout(() => {
+                    el.classList.remove("flash-highlight");
+                }, 1800);
+            }, 50);
         }
 
         function clearHistory() {
             localStorage.removeItem(HISTORY_KEY);
             renderHistory();
         }
-
-        renderHistory();
 
         const STAGES = ["connecting", "searching", "extracting", "summarizing"];
         let statusPollInterval = null;
@@ -2344,7 +3950,6 @@
             });
         }
 
-        const RESULTS_KEY = "email_query_results";
         const MAX_RESULTS = 20;
         let resultCounter = 0;
 
@@ -2378,8 +3983,20 @@
             const entry = document.createElement("div");
             entry.className = "result-entry";
             entry.id = entryId;
+            if (record.queryId) {
+                entry.setAttribute("data-query-id", record.queryId);
+            }
 
-            let bodyHTML = `<div class="result-grid">`;
+            let bodyHTML = `<div class="result-entry-toggle" role="button" tabindex="0" aria-expanded="true" aria-controls="${entryId}-panel" onclick="toggleResultEntry('${entryId}')">`;
+            bodyHTML += `<div class="result-entry-toggle-text">`;
+            bodyHTML += `<span class="result-meta-tag">${safeKeyword}</span>`;
+            bodyHTML += `<span class="result-meta-time">${safeTime}</span>`;
+            bodyHTML += `<span class="result-entry-toggle-hint">点击折叠 / 展开</span>`;
+            bodyHTML += `</div>`;
+            bodyHTML += `<span class="toggle-arrow result-entry-chevron" aria-hidden="true">▼</span>`;
+            bodyHTML += `</div>`;
+            bodyHTML += `<div class="result-entry-panel" id="${entryId}-panel">`;
+            bodyHTML += `<div class="result-grid">`;
             bodyHTML += `<div class="result-meta">`;
             bodyHTML += `<span class="result-meta-tag">${safeKeyword}</span>`;
             bodyHTML += `<span class="result-meta-time">${safeTime}</span>`;
@@ -2422,9 +4039,19 @@
             } else {
                 bodyHTML += `<div class="empty-box">未找到相关邮件</div>`;
             }
-            bodyHTML += `</div></div></div></div></div>`;
+            bodyHTML += `</div></div></div></div></div></div>`;
 
             entry.innerHTML = bodyHTML;
+
+            const entryToggle = entry.querySelector(".result-entry-toggle");
+            if (entryToggle) {
+                entryToggle.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        toggleResultEntry(entryId);
+                    }
+                });
+            }
 
             const container = document.getElementById("resultsEntries");
             container.appendChild(entry);
@@ -2440,6 +4067,28 @@
             }
 
             return entry;
+        }
+
+        function toggleResultEntry(entryId) {
+            const entry = document.getElementById(entryId);
+            if (!entry) return;
+            entry.classList.toggle("collapsed");
+            const t = entry.querySelector(".result-entry-toggle");
+            if (t) {
+                const collapsed = entry.classList.contains("collapsed");
+                t.setAttribute("aria-expanded", collapsed ? "false" : "true");
+            }
+        }
+
+        function collapseAllResultEntries() {
+            const container = document.getElementById("resultsEntries");
+            if (!container) return;
+            container.querySelectorAll(".result-entry").forEach((entry) => {
+                entry.classList.add("collapsed");
+                const t = entry.querySelector(".result-entry-toggle");
+                if (t) t.setAttribute("aria-expanded", "false");
+            });
+            showToast("已折叠全部结果");
         }
 
         function toggleEmailList(listId, toggleId) {
@@ -2462,8 +4111,6 @@
             children.reverse().forEach((child) => container.appendChild(child));
         }
 
-        restoreResults();
-
         function clearAllResults() {
             localStorage.removeItem(RESULTS_KEY);
             document.getElementById("resultsEntries").innerHTML = "";
@@ -2471,9 +4118,16 @@
         }
 
         async function runTask() {
+            if (currentCookieStatus !== "valid" && currentCookieStatus !== "warning") {
+                showToast("请先在“步骤一”连接校园邮箱并确认成功后，再执行分析。");
+                return;
+            }
+
             const keyword = document.getElementById("keyword").value.trim();
             const instruction = document.getElementById("instruction").value.trim();
-            const emailCount = Math.max(1, Math.min(10, Number(document.getElementById("emailCount").value) || 10));
+            const mode = document.querySelector('input[name="runMode"]:checked').value;
+            const limit = mode === "deep" ? DEEP_MAX_EMAILS : 10;
+            const emailCount = Math.max(1, Math.min(limit, Number(document.getElementById("emailCount").value) || limit));
             const runBtn = document.getElementById("runBtn");
             const resultsHistory = document.getElementById("resultsHistory");
 
@@ -2488,11 +4142,18 @@
                 const response = await fetch("/api/execute", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ keyword, instruction, email_count: emailCount })
+                    body: JSON.stringify({ keyword, instruction, email_count: emailCount, mode: mode })
                 });
 
                 const data = await response.json();
                 stopStatusPolling();
+
+                if (response.status === 409) {
+                    setProgressStage("connecting", data.message || "请先完成邮箱连接");
+                    document.getElementById("progressDetail").style.animation = "none";
+                    showToast(data.message || "正在连接邮箱，请先完成或取消后再试");
+                    return;
+                }
 
                 if (data.status === "cookie_expired") {
                     setProgressStage("searching", "");
@@ -2509,13 +4170,17 @@
                     document.getElementById("progressDetail").textContent = "分析完成";
                     document.getElementById("progressDetail").style.animation = "none";
 
-                    saveToHistory(keyword || "(最新邮件)", instruction, emailCount);
-                    localStorage.setItem("last_email_process_time", new Date().toISOString());
+                    const queryId = generateQueryId();
+                    saveToHistory(keyword || "(最新邮件)", instruction, emailCount, queryId);
+                    const tsKey = sessionEmail ? "last_email_process_time:" + sessionEmail : "last_email_process_time";
+                    localStorage.setItem(tsKey, new Date().toISOString());
 
                     const now = new Date().toLocaleString("zh-CN", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
                     const record = {
+                        queryId,
                         keyword: keyword || "",
                         instruction,
+                        emailCount,
                         summary: data.summary || "",
                         emails: data.emails || [],
                         time: now
@@ -2541,7 +4206,409 @@
             } finally {
                 runBtn.disabled = false;
                 runBtn.classList.remove("loading");
-                runBtn.querySelector(".btn-label").textContent = "开始智能分析";
+                syncRunButtonLabel();
+            }
+        }
+
+        function handleStep2Primary() {
+            const mode = document.querySelector('input[name="runMode"]:checked').value;
+            if (mode === "deep") {
+                runDeepScan();
+            } else {
+                runTask();
+            }
+        }
+
+        function rowDateInDeepRange(rowDate, df, dt) {
+            const d = (rowDate || "").trim().slice(0, 10);
+            if (!d) return true;
+            if (df && d < df) return false;
+            if (dt && d > dt) return false;
+            return true;
+        }
+
+        function getFilteredDeepIndices() {
+            if (!window.deepScanData || !window.deepScanData.emails) return [];
+            const cats = new Set();
+            document.querySelectorAll(".deep-cat-cb:checked").forEach((cb) => {
+                if (cb.dataset.cat) cats.add(cb.dataset.cat);
+            });
+            const df = document.getElementById("deepDateFrom") && document.getElementById("deepDateFrom").value;
+            const dt = document.getElementById("deepDateTo") && document.getElementById("deepDateTo").value;
+            const out = [];
+            for (const row of window.deepScanData.emails) {
+                if (!cats.has(row.category)) continue;
+                if (!rowDateInDeepRange(row.date, df, dt)) continue;
+                out.push(row.index);
+            }
+            return out.sort((a, b) => a - b);
+        }
+
+        function updateDeepScanFilterCount() {
+            const el = document.getElementById("deepScanSelectedCount");
+            if (!el || !window.deepScanData) return;
+            const n = getFilteredDeepIndices().length;
+            el.textContent = "已选中 " + n + " 封（一次最多分析 " + DEEP_MAX_EMAILS + " 封）";
+        }
+
+        function renderDeepScanUI(data) {
+            const tags = document.getElementById("deepCategoryTags");
+            const listEl = document.getElementById("deepScanEmailList");
+            if (!tags || !listEl) return;
+            tags.innerHTML = "";
+            const cats = data.categories || {};
+            Object.keys(cats)
+                .sort()
+                .forEach((cat) => {
+                    const n = cats[cat];
+                    const label = document.createElement("label");
+                    label.className = "deep-cat-tag";
+                    const cb = document.createElement("input");
+                    cb.type = "checkbox";
+                    cb.className = "deep-cat-cb";
+                    cb.dataset.cat = cat;
+                    cb.checked = true;
+                    cb.addEventListener("change", updateDeepScanFilterCount);
+                    const span = document.createElement("span");
+                    span.textContent = cat + " (" + n + ")";
+                    label.appendChild(cb);
+                    label.appendChild(span);
+                    tags.appendChild(label);
+                });
+
+            const dfEl = document.getElementById("deepDateFrom");
+            const dtEl = document.getElementById("deepDateTo");
+            if (data.date_range) {
+                if (data.date_range.min) dfEl.value = data.date_range.min;
+                if (data.date_range.max) dtEl.value = data.date_range.max;
+            }
+            if (!dfEl.dataset.bound) {
+                dfEl.dataset.bound = "1";
+                dtEl.dataset.bound = "1";
+                dfEl.addEventListener("change", updateDeepScanFilterCount);
+                dtEl.addEventListener("change", updateDeepScanFilterCount);
+            }
+
+            const byCat = {};
+            data.emails.forEach((row) => {
+                const c = row.category || "其他";
+                if (!byCat[c]) byCat[c] = [];
+                byCat[c].push(row);
+            });
+            listEl.innerHTML = "";
+            Object.keys(byCat)
+                .sort()
+                .forEach((cat) => {
+                    const details = document.createElement("details");
+                    details.open = true;
+                    const summary = document.createElement("summary");
+                    summary.textContent = cat + " (" + byCat[cat].length + ")";
+                    details.appendChild(summary);
+                    const wrap = document.createElement("div");
+                    wrap.className = "deep-scan-rows";
+                    byCat[cat].forEach((row) => {
+                        const div = document.createElement("div");
+                        div.className = "deep-scan-row";
+                        div.innerHTML =
+                            '<span class="deep-idx">#' +
+                            row.index +
+                            '</span><span class="deep-date">' +
+                            escapeHtml(row.date || "—") +
+                            '</span><span class="deep-subj">' +
+                            escapeHtml(row.subject || "") +
+                            "</span>" +
+                            '<span class="deep-snd">' +
+                            escapeHtml(row.sender || "") +
+                            "</span>" +
+                            '<div class="deep-prev">' +
+                            escapeHtml((row.preview || "").slice(0, 220)) +
+                            "</div>";
+                        wrap.appendChild(div);
+                    });
+                    details.appendChild(wrap);
+                    listEl.appendChild(details);
+                });
+            updateDeepScanFilterCount();
+            renderDeepCategoryPieChart(data.categories || {}, data.list_count);
+        }
+
+        async function runDeepScan() {
+            if (currentCookieStatus !== "valid" && currentCookieStatus !== "warning") {
+                showToast("请先在步骤一连接校园邮箱并确认成功后，再执行深度扫描。");
+                return;
+            }
+            const keyword = document.getElementById("keyword").value.trim();
+            const runBtn = document.getElementById("runBtn");
+            runBtn.disabled = true;
+            runBtn.classList.add("loading");
+            showProgress();
+            setProgressStage("connecting", "正在连接邮箱服务器...");
+            startStatusPolling();
+            try {
+                const response = await fetch("/api/deep_scan", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ keyword }),
+                });
+                const data = await response.json();
+                stopStatusPolling();
+                if (response.status === 409 || response.status === 403) {
+                    setProgressStage("connecting", data.message || "");
+                    showToast(data.message || "无法执行");
+                    return;
+                }
+                if (data.status === "cookie_expired") {
+                    setProgressStage("searching", "");
+                    document.getElementById("progressDetail").textContent = "Cookie 已过期";
+                    showToast("Cookie 已过期，请在配置中更新");
+                    return;
+                }
+                if (data.status !== "success") {
+                    showToast(data.message || "深度扫描失败");
+                    setProgressStage("connecting", data.message || "失败");
+                    return;
+                }
+                window.deepScanData = data;
+                document.getElementById("deepScanResults").style.display = "block";
+                const ab = document.getElementById("analyzeSelectedBtn");
+                ab.style.display = "block";
+                ab.disabled = false;
+                renderDeepScanUI(data);
+                STAGES.forEach((s) => {
+                    const el = document.getElementById("step-" + s);
+                    el.classList.remove("active");
+                    el.classList.add("completed");
+                });
+                document.getElementById("progressBarFill").style.width = "100%";
+                document.getElementById("progressDetail").textContent = "扫描完成";
+                document.getElementById("progressDetail").style.animation = "none";
+                showToast("已扫描 " + data.list_count + " 封，请筛选后点击「开始分析选中的邮件」");
+                setTimeout(() => hideProgress(), 1800);
+            } catch (e) {
+                stopStatusPolling();
+                setProgressStage("connecting", "网络请求错误");
+                showToast("请求错误: " + e.message);
+            } finally {
+                runBtn.disabled = false;
+                runBtn.classList.remove("loading");
+                syncRunButtonLabel();
+            }
+        }
+
+        async function runAnalyzeSelected() {
+            if (currentCookieStatus !== "valid" && currentCookieStatus !== "warning") {
+                showToast("请先在步骤一连接校园邮箱并确认成功后，再执行分析。");
+                return;
+            }
+            if (!window.deepScanData || !window.deepScanData.emails || !window.deepScanData.emails.length) {
+                showToast("请先完成一次深度扫描。");
+                return;
+            }
+            const indices = getFilteredDeepIndices();
+            if (indices.length === 0) {
+                showToast("当前筛选下没有邮件，请调整类别或日期。");
+                return;
+            }
+            if (indices.length > DEEP_MAX_EMAILS) {
+                showToast("一次最多分析 " + DEEP_MAX_EMAILS + " 封，请缩小筛选范围（当前 " + indices.length + " 封）。");
+                return;
+            }
+            const keyword = document.getElementById("keyword").value.trim();
+            const instruction = document.getElementById("instruction").value.trim();
+            const df = document.getElementById("deepDateFrom").value;
+            const dt = document.getElementById("deepDateTo").value;
+            const analyzeBtn = document.getElementById("analyzeSelectedBtn");
+            const resultsHistory = document.getElementById("resultsHistory");
+
+            analyzeBtn.disabled = true;
+            analyzeBtn.classList.add("loading");
+            showProgress();
+            setProgressStage("connecting", "正在连接邮箱服务器...");
+            startStatusPolling();
+
+            try {
+                const response = await fetch("/api/execute", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        keyword,
+                        instruction,
+                        mode: "deep",
+                        email_count: Math.min(DEEP_MAX_EMAILS, indices.length),
+                        indices,
+                        date_from: df || null,
+                        date_to: dt || null,
+                    }),
+                });
+                const data = await response.json();
+                stopStatusPolling();
+
+                if (response.status === 409) {
+                    setProgressStage("connecting", data.message || "");
+                    showToast(data.message || "请先完成邮箱连接");
+                    return;
+                }
+                if (response.status === 400) {
+                    const msg400 =
+                        data.message ||
+                        (typeof data.detail === "string" ? data.detail : "") ||
+                        (Array.isArray(data.detail) ? JSON.stringify(data.detail) : "") ||
+                        "请求无效";
+                    setProgressStage("connecting", msg400);
+                    showToast(msg400);
+                    return;
+                }
+
+                if (data.status === "cookie_expired") {
+                    setProgressStage("searching", "");
+                    document.getElementById("progressDetail").textContent = "Cookie 已过期";
+                    showToast("Cookie 已过期，请在配置中更新");
+                    return;
+                }
+                if (data.status === "success") {
+                    STAGES.forEach((s) => {
+                        const el = document.getElementById("step-" + s);
+                        el.classList.remove("active");
+                        el.classList.add("completed");
+                    });
+                    document.getElementById("progressBarFill").style.width = "100%";
+                    document.getElementById("progressDetail").textContent = "分析完成";
+                    document.getElementById("progressDetail").style.animation = "none";
+
+                    const queryId = generateQueryId();
+                    saveToHistory(keyword || "(深度筛选)", instruction, indices.length, queryId);
+                    const tsKey = sessionEmail ? "last_email_process_time:" + sessionEmail : "last_email_process_time";
+                    localStorage.setItem(tsKey, new Date().toISOString());
+
+                    const now = new Date().toLocaleString("zh-CN", {
+                        month: "short",
+                        day: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    });
+                    const record = {
+                        queryId,
+                        keyword: keyword || "",
+                        instruction,
+                        emailCount: indices.length,
+                        summary: data.summary || "",
+                        emails: data.emails || [],
+                        time: now,
+                    };
+                    saveResultToStorage(record);
+                    resultsHistory.classList.remove("results-hidden");
+                    const entry = renderResultEntry(record, true);
+                    document.getElementById("resultsEntries").prepend(entry);
+                    setTimeout(() => hideProgress(), 1800);
+                    setTimeout(() => entry.scrollIntoView({ behavior: "smooth", block: "start" }), 280);
+                } else {
+                    setProgressStage("connecting", data.message || "执行失败");
+                    showToast("执行失败: " + (data.message || "未知错误"));
+                }
+            } catch (e) {
+                stopStatusPolling();
+                setProgressStage("connecting", "网络请求错误");
+                showToast("请求错误: " + e.message);
+            } finally {
+                analyzeBtn.disabled = false;
+                analyzeBtn.classList.remove("loading");
+            }
+        }
+
+        async function devExtractSampleBodies() {
+            if (currentCookieStatus !== "valid" && currentCookieStatus !== "warning") {
+                showToast("请先在「步骤一」连接校园邮箱并确认成功后再试。");
+                return;
+            }
+            const keyword = document.getElementById("keyword").value.trim();
+            const btn = document.getElementById("devExtractBodiesBtn");
+            const pre = document.getElementById("devExtractBodiesPre");
+            btn.disabled = true;
+            pre.textContent = "正在深度拉取列表并提取全量正文（最多 100 封），请耐心等待……";
+            pre.classList.add("visible");
+            try {
+                const response = await fetch("/api/dev/extract_sample_bodies", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ keyword }),
+                });
+                const data = await response.json();
+                if (response.status === 409 || response.status === 403) {
+                    pre.textContent = "";
+                    pre.classList.remove("visible");
+                    showToast(data.message || "无法执行");
+                    return;
+                }
+                if (data.status === "cookie_expired") {
+                    pre.textContent = data.message || "Cookie 已失效";
+                    showToast("Cookie 已过期或无法打开列表");
+                    return;
+                }
+                if (data.status !== "success") {
+                    pre.textContent = data.message || JSON.stringify(data, null, 2);
+                    showToast(data.message || "失败");
+                    return;
+                }
+                const head = "# " + (data.message || "") + "\n# 列表 " + data.list_count + " 封\n"
+                    + (data.output_file ? "# 已保存: src/" + data.output_file + "（JSON）\n" : "")
+                    + "\n";
+                pre.textContent = head + JSON.stringify(data.export || { samples: data.samples }, null, 2);
+                const nIdx = (data.indices && data.indices.length) || 0;
+                showToast("已提取 " + nIdx + " 封正文" + (data.output_file ? "，已写入 src/" + data.output_file : ""));
+                pre.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            } catch (e) {
+                pre.textContent = "请求错误: " + e.message;
+                showToast("请求错误: " + e.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function devExtractDailyBodiesNoLlm() {
+            if (currentCookieStatus !== "valid" && currentCookieStatus !== "warning") {
+                showToast("请先在「步骤一」连接校园邮箱并确认成功后再试。");
+                return;
+            }
+            const keyword = document.getElementById("keyword").value.trim();
+            const countRaw = parseInt(document.getElementById("emailCount").value, 10);
+            const email_count = Math.min(10, Math.max(1, Number.isFinite(countRaw) ? countRaw : 10));
+            const btn = document.getElementById("devExtractDailyBtn");
+            const pre = document.getElementById("devExtractDailyPre");
+            btn.disabled = true;
+            pre.textContent = "正在按日常模式拉取列表并提取正文（不调 LLM），请稍候…";
+            pre.classList.add("visible");
+            try {
+                const response = await fetch("/api/dev/extract_daily_bodies_no_llm", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ keyword, email_count }),
+                });
+                const data = await response.json();
+                if (response.status === 409 || response.status === 403) {
+                    pre.textContent = "";
+                    pre.classList.remove("visible");
+                    showToast(data.message || "无法执行");
+                    return;
+                }
+                if (data.status === "cookie_expired") {
+                    pre.textContent = data.message || "Cookie 已失效";
+                    showToast("Cookie 已过期或无法打开列表");
+                    return;
+                }
+                if (data.status !== "success") {
+                    pre.textContent = data.message || JSON.stringify(data, null, 2);
+                    showToast(data.message || "失败");
+                    return;
+                }
+                pre.textContent = data.text || "";
+                const n = (data.items && data.items.length) || data.list_count || 0;
+                showToast("日常流已提取 " + n + " 封正文（未调用 LLM）");
+                pre.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            } catch (e) {
+                pre.textContent = "请求错误: " + e.message;
+                showToast("请求错误: " + e.message);
+            } finally {
+                btn.disabled = false;
             }
         }
 
@@ -2570,16 +4637,25 @@
                 const data = await response.json();
 
                 if (data.status === "valid") {
+                    currentCookieStatus = "valid";
                     icon.textContent = "OK";
                     label.textContent = "Cookie 有效";
                     setCookiePill("Cookie 有效", "ok");
                     showToast("Cookie 验证通过");
+                } else if (data.status === "warning") {
+                    currentCookieStatus = "warning";
+                    icon.textContent = "!";
+                    label.textContent = "已连接（需注意）";
+                    setCookiePill("已连接，见提示", "warn");
+                    showToast(data.message || "已进入邮箱，但检测有提示，仍可尝试分析。");
                 } else if (data.status === "invalid") {
+                    currentCookieStatus = "invalid";
                     icon.textContent = "NO";
                     label.textContent = "Cookie 失效";
                     setCookiePill("Cookie 已失效", "bad");
                     showToast("Cookie 已过期，请更新");
                 } else {
+                    currentCookieStatus = "error";
                     icon.textContent = "ER";
                     label.textContent = "状态异常";
                     setCookiePill("状态异常", "warn");
@@ -2689,6 +4765,7 @@
                 });
             }
             loadCookieEditor();
+            wireHeroEditModal();
             const heroBtn = document.getElementById("heroEditOpenBtn");
             if (heroBtn) {
                 heroBtn.addEventListener("click", (ev) => {
@@ -2706,11 +4783,20 @@
             toastTimer = setTimeout(() => toast.classList.remove("visible"), 3000);
         }
 
-        try {
-            renderHeroTitle();
-        } catch (e) {
-            console.error("renderHeroTitle:", e);
-        }
+        (async function bootstrap() {
+            await initUserSession();
+            try {
+                updateMailCountLimit();
+            } catch (e) {}
+            renderHistory();
+            restoreResults();
+            try {
+                renderHeroTitle();
+            } catch (e) {
+                console.error("renderHeroTitle:", e);
+            }
+            scheduleAutoCookiePoll();
+        })();
     </script>
 </body>
 
