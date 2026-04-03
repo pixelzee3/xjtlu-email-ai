@@ -1,0 +1,114 @@
+# 📧 XJTLU 邮件智能助手 - 项目完整介绍与文件说明
+
+## 🌟 第一部分：整个项目的完整介绍 (Project Overview)
+
+本项目是一个基于 Python 自动化工具 Playwright 和 大语言模型 (LLM) 搭建的**“西浦 (XJTLU) 邮箱自动总结助手”**。
+它的主要目的是为了解决学生们每天面对海量校内英文通知、图文并茂的长邮件时，阅读效率低、容易遗漏关键信息（如作业截止时间、社团活动报名等）的痛点。
+
+### 核心亮点与工作流程：
+1. **绕过双卡认证 (MFA)，直达邮箱**
+   针对学校 MFA 验证，项目采用 Cookie 注入与可选**交互式登录向导**：将浏览器登录状态写入用户配置后，可免密拉取邮件（具体以当前 OWA 与学校策略为准）。
+2. **多层 iframe 穿透与正文提取**
+   Outlook Web App (OWA) 页面结构复杂。项目内置智能滚动、动态 Frame 穿透、阅读窗格定位等机制，配合 BeautifulSoup4 等清洗噪声，得到用于 AI 分析的纯文本。
+3. **并行的大模型分析与合并摘要**
+   对多封邮件采用批量并行分析，再合并为总摘要，缩短等待时间；指令与输出格式由 `main.py` 中的提示模板与用户指令共同约束。
+4. **Web 交互界面与按用户隔离的配置**
+   FastAPI 提供网页控制台：关键词/最新邮件、进度展示、设置中的 API 与 Cookie；**本地多用户**（`auth_db` + 会话）下每人独立配置与历史。
+5. **深度扫描与优先级辅助（deep）**
+   在深度扫描流程中，可对列表邮件做正文抽样与导出；`deep_priority` 基于已缓存内容与规则做**确定性优先级**评分，并可为界面生成「优先事项」类摘要提示（不单独访问邮箱）。
+6. **定时摘要（Digest）**
+   用户可在界面配置每日/每周、本地时刻、关键词与总结指令；服务端通过 `digest_schedule` 计算周期与到点条件，用 `digest_jobs` / `digest_artifacts` 排队执行并在历史中展示。
+7. **本地「摘要结果」与「搜索与指令历史」**
+   浏览器 `localStorage` 中分别保存摘要卡片与搜索条件历史；**清空任一侧会同步清空另一侧**，避免只删一边造成不一致。
+
+### 采用技术栈总结：
+- **核心后端服务**：FastAPI + Uvicorn + Python asyncio。
+- **浏览器自动化**：Microsoft Playwright（如 Edge 通道）。
+- **文本清洗**：BeautifulSoup4。
+- **网页前端**：单页 `index.html`（HTML + 内联 CSS/JS），Fetch 与轮询调用 API。
+- **本地账号**：SQLite（`user.db`），密码 bcrypt；定时任务与摘要产物亦存于该库相关表。
+
+---
+
+## 📂 第二部分：每一个文件的每一个作用 (File-by-File Explanation)
+
+### 【根目录文件】（尽量只放启动与版本控制必需项）
+
+- `run_helper.bat`（若已提供）
+  **作用：新手推荐的图形化安装与环境诊断向导。**双击后进入 `src` 运行 `startup_helper_gui.py`，可检查 Python/依赖/Playwright 等；环境正常后可在窗口内启动主程序。
+
+- `run_app.bat`
+  **作用：Windows 下一键启动 Web 服务。**自动激活虚拟环境（若有），进入 `src` 运行 `app.py`，并打开浏览器访问 `127.0.0.1:8001`。
+
+- `README.md`（极简入口）
+  **作用：指向完整文档。**根目录仅保留几行说明；详细说明书在 `docs/README.md`。
+
+- `.env` 与 `.env.example`（若使用）
+  **作用：**存放 API 密钥等敏感信息；示例文件不含真实密钥。
+
+- `.gitignore`
+  **作用：**排除 `user.db`、`__pycache__`、Cookie 导出（如 `cookies_mail*.txt`）等，避免误提交隐私。
+
+### 【docs - 文档与备忘集中目录】
+
+- `docs/README.md`
+  **作用：项目的完整“说明书门面”。**功能特性、安装依赖、快速启动、配置说明、登录与 `user.db` 等。
+
+- `docs/维护指南.txt`
+  **作用：**Cookie 过期、OWA 调整时的运维备忘。
+
+- `docs/校友产品优先级计划.md`
+  **作用：**产品路线图与阶段优先级。
+
+- `docs/项目更新跟进表.md`
+  **作用：**相对 HEAD 的快照与模块对照，便于周报与同步。
+
+- `docs/项目完整介绍与文件说明.txt`
+  **作用：**本文件；项目总览与文件索引。
+
+- `docs/` 下其余 `.txt` / `.md`
+  **作用：**如最新测试结果、课堂笔记等，统一放在此处。
+
+- `docs/archive/practice2（存档）/`
+  **作用：**历史快照副本（含当时代码与说明），仅供对照，日常开发以仓库根下 `src/` 为准。
+
+### 【src - 后端代码目录】
+
+- `src/startup_helper_core.py` / `src/startup_helper_gui.py`
+  **作用：启动助手。**`core` 为环境检查与报错规则（不加载 FastAPI）；`gui` 为 Tkinter 界面，由 `run_helper.bat` 调用。
+
+- `src/digest_schedule.py`
+  **作用：定时摘要辅助逻辑。**默认 digest 配置合并、周期标签（日/周）、下次运行提示、到点判断等纯函数；与 `app.py` 中后台循环及 `PUT/GET /api/digest/settings` 配合。
+
+- `src/deep_priority.py`
+  **作用：深度扫描相关优先级。**基于主题/正文片段与规则对邮件做评分排序、生成优先事项类 digest 提示文本；依赖 `main` 中分类与日期解析等（不发起浏览器访问）。
+
+- `src/main.py`
+  **作用：自动化与 LLM 核心库。**浏览器操作、列表与正文提取、并行单封分析、合并摘要、深度列表/开发者导出相关逻辑等；命令行亦可直接 `python main.py` 跑批（无 Web 登录）。
+
+- `src/app.py`
+  **作用：HTTP 服务入口。**路由包括：注册登录、`/api/execute` 日常摘要、`/api/deep_scan` 深度扫描、`/api/digest/*` 定时设置与历史、Cookie 检测与交互登录、预启动浏览器、静态页面等；生命周期内启动 **digest 规划与消费者** 异步任务。
+
+- `src/auth_db.py`
+  **作用：本地账号与配置存储。**SQLite：用户表、用户配置 JSON（含 `digest`）、**digest_jobs**（排队任务）、**digest_artifacts**（执行结果摘要文本等）；并提供 digest 去重与查询辅助函数。
+
+- `src/config.json`（用户环境产生，模板见 `config.example.json`）
+  **作用：**传统单文件配置；多用户模式下以数据库中**当前用户**的配置为准，旧版 `config.json` 可在首次建号时导入（行为以 `app.py` 为准）。
+
+- `src/requirements.txt`
+  **作用：**Python 依赖清单；安装：`pip install -r src/requirements.txt`，另需 `playwright install msedge`（或文档指定通道）。
+
+### 【src/templates - 前端目录】
+
+- `src/templates/index.html`
+  **作用：登录后的主控制台。**搜索词、邮件条数、**Prompt 预设**（一键填入总结指令）、生成摘要与深度扫描入口、**摘要结果列表**与 **localStorage 搜索历史**、侧栏 **定时摘要**（设置、历史、与后端同步）、主题色预设等；清空摘要与清空历史已做**双端同步**。
+
+- `src/templates/login.html`
+  **作用：登录页。**
+
+- `src/templates/register.html`
+  **作用：注册页。**邮箱唯一；可与历史 `config.json` 迁移策略配合（见 `app` 实现）。
+
+---
+
+**说明：**仓库内不保留一次性调试脚本或与主线混淆的临时导出；深度扫描可能产生 `deep_scan_result.json` 等本地文件，若需提交请确认不含隐私。若需回归测试，请使用独立分支或本地脚本且勿提交敏感导出（Cookie、邮件正文样本等）。

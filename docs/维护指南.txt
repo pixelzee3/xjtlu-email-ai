@@ -15,13 +15,16 @@
 
 ## 🛠️ 环境准备
 
-1. **安装依赖**:
+1. **新手（Windows）图形助手**:
+   双击项目根目录 **`run_helper.bat`**，在窗口中可「重新检查」环境、「安装 pip 依赖」「安装 Playwright 浏览器」，并在「粘贴报错分析」里粘贴报错全文获取常见原因与建议。安装类操作需你在弹窗中确认后才会执行，不会在后台静默改环境。
+
+2. **命令行安装依赖**（与助手内按钮等价）:
    ```bash
    pip install -r src/requirements.txt
    playwright install msedge
    ```
 
-2. **配置 API**:
+3. **配置 API**:
    复制 `src/config.example.json` 为 `src/config.json`，填入你的 LLM API 信息（支持 OpenAI 接口格式）。
 
 ---
@@ -45,6 +48,6 @@
 
 ## 🚀 启动项目
 - **命令行模式**: `python src/main.py` (按提示输入指令)
-- **Web 界面模式**: 双击 `run_app.bat` (访问 http://127.0.0.1:8001)
+- **Web 界面模式（新手）**: 先双击 `run_helper.bat` 检查环境，再在助手内启动主程序；或直接双击 `run_app.bat` (访问 http://127.0.0.1:8001)
 
 希望这份指南能帮你快速上手！如有疑问，随时交流。

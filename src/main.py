@@ -488,17 +488,17 @@ async def _prepare_owa_mail_list_frame(page, keyword: str, config: dict = None):
             base_url = base_url.split("#")[0].rstrip("/")
         search_url = f"{base_url}/#path=/mail/search"
         await page.goto(search_url, wait_until="domcontentloaded", timeout=30000)
-        await page.wait_for_timeout(2000)
+        await page.wait_for_timeout(1250)
         # OWA 偶发未挂载搜索框；与手动操作一致：进入搜索页后再刷新一次更稳定
         await page.reload(wait_until="domcontentloaded", timeout=30000)
-        await page.wait_for_timeout(2000)
+        await page.wait_for_timeout(1250)
         print("已跳转到搜索页面（已刷新一次）")
     else:
         base_url = (config or {}).get("email", {}).get("url", "").rstrip("/")
         if "#" in base_url:
             base_url = base_url.split("#")[0].rstrip("/")
         await page.goto(f"{base_url}/#path=/mail", wait_until="domcontentloaded", timeout=30000)
-        await page.wait_for_timeout(2000)
+        await page.wait_for_timeout(1250)
         print("已跳转到收件箱（无关键词，查看最新邮件）")
 
     candidate_frames = [page, *page.frames]
@@ -573,7 +573,7 @@ async def _prepare_owa_mail_list_frame(page, keyword: str, config: dict = None):
         await search_box.click()
         await search_box.fill(keyword)
         await search_box.press("Enter")
-        await page.wait_for_timeout(1500)
+        await page.wait_for_timeout(950)
         target_frame = search_frame
 
     return target_frame
@@ -850,7 +850,7 @@ def build_per_email_analysis_prompt(
 
 下面仅有第 {email_index}/{email_total} 封邮件的全部可读内容。请只根据这一封作答，不要提及其他邮件。
 【严禁编造】只能基于下方原文作答。若正文缺失或提取失败须如实说明。
-若用户指令未规定格式，默认按：
+若用户指令未规定格式，默认按（每个字段必须单独占一行，只写该字段内容；多封邮件之间空一行）：
 - 邮件标题：
 - 发件人：（优先使用邮件元数据中已给出的「发件人」字段；若元数据未提供则从正文推断；均无则说明未提供）
 - 内容总结：
@@ -866,20 +866,31 @@ def build_final_merge_prompt(
     today: str,
     instruction: str,
     per_email_sections: str,
+    email_count: int,
 ) -> str:
+    n = max(1, int(email_count))
     return f"""当前日期：{today}
 
 【用户指令（最高优先级，必须严格遵守）】：
 {instruction}
 
-前面已对每封邮件分别做过初步分析（如下）。请严格依据这些分析汇总成最终结果，满足用户指令。
-若用户只关心部分邮件，只需输出相关部分。
+下面共有 {n} 封邮件的初步分析（按「第 1 封」…「第 {n} 封」排列）。请严格依据这些分析生成最终输出，满足用户指令。
 【严禁编造】不得新增下方未出现的邮件或事实。
-若用户指令未规定格式，默认对涉及的每封邮件按：
-- 邮件标题：
-- 发件人：
-- 内容总结：
-- 重要程度：（1-5 星）
+
+【输出结构与数量（务必遵守）】
+除非用户指令里**明确**写了只要其中部分邮件（例如点明序号、或「仅活动类」等可执行的过滤条件），否则你必须输出恰好 {n} 个邮件块，与第 1～{n} 封**一一对应、顺序一致**：禁止把多封合并成一个块，禁止省略某一封（提取失败或无话可写时也要保留该块，在内容总结中如实说明）。
+
+【格式硬性约束（逐字遵守，不得增减修改字段名）】
+1. 第一行**必须直接**以「邮件标题：」开头（不要写任何引言、说明、序号前缀、编号或空行）。
+2. 每个邮件块恰好 4 行，字段名与冒号完全固定（半角或全角冒号均可），示例：
+邮件标题：XXX
+发件人：XXX
+内容总结：XXX
+重要程度：3星
+3. 块与块之间仅用一个空行分隔，「重要程度」必须为半角 1～5 的单个数字紧跟「星」。
+4. 输出中**不允许出现序号标记**（如「第1封」「1.」「#1」）和任何花哨格式（如 Markdown 加粗、标题、列表符号）。
+
+若用户指令确实只要部分邮件，只能省略用户明确要求排除的序号，其余仍须按上述格式输出。
 
 各封邮件的初步分析：
 {per_email_sections}
@@ -1066,13 +1077,13 @@ async def search_emails(
         print(f"深度模式共解析到 {len(mail_list)} 个邮件列表项（去重后顺序）")
     else:
         print(f"开始滚动加载 (日常模式)...")
-        scroll_times = 5
+        scroll_times = 4
         for i in range(scroll_times):
             await _scroll_owa_mail_list_step(target_frame)
-            await page.wait_for_timeout(420)
+            await page.wait_for_timeout(280)
             print(f"滚动 {i+1}/{scroll_times} 次")
         await _reset_owa_mail_list_scroll(target_frame)
-        await page.wait_for_timeout(650)
+        await page.wait_for_timeout(420)
         await _append_visible_list_rows(
             target_frame,
             config,
@@ -1718,6 +1729,7 @@ async def main() -> None:
                 page,
                 e["locator"],
                 expected_subject=e.get("subject", ""),
+                fast_activation=True,
             )
             extracted_items.append(
                 {
@@ -1728,7 +1740,7 @@ async def main() -> None:
                     "body": body,
                 }
             )
-            await page.wait_for_timeout(1000)
+            await page.wait_for_timeout(350)
 
         if not extracted_items:
             print("没有可分析的邮件。")
@@ -1785,6 +1797,7 @@ async def main() -> None:
             today=today,
             instruction=user_instruction,
             per_email_sections=per_email_sections,
+            email_count=n,
         )
         print("\n正在调用 LLM 生成最终汇总…")
         try:

@@ -45,6 +45,40 @@ def init_db() -> None:
                 config_json TEXT NOT NULL,
                 FOREIGN KEY (user_id) REFERENCES users(id)
             );
+            CREATE TABLE IF NOT EXISTS digest_jobs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                period_label TEXT NOT NULL,
+                run_at TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'pending',
+                payload_json TEXT NOT NULL,
+                error_message TEXT,
+                artifact_id INTEGER,
+                created_at TEXT NOT NULL,
+                started_at TEXT,
+                finished_at TEXT,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_digest_jobs_pending_run
+                ON digest_jobs(status, run_at);
+            CREATE INDEX IF NOT EXISTS idx_digest_jobs_user_period
+                ON digest_jobs(user_id, period_label, status);
+            CREATE TABLE IF NOT EXISTS digest_artifacts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL,
+                job_id INTEGER,
+                period_label TEXT NOT NULL,
+                cadence TEXT NOT NULL,
+                started_at TEXT NOT NULL,
+                finished_at TEXT,
+                status TEXT NOT NULL,
+                summary_text TEXT,
+                result_json TEXT,
+                error_message TEXT,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            );
+            CREATE INDEX IF NOT EXISTS idx_digest_artifacts_user_time
+                ON digest_artifacts(user_id, finished_at DESC);
             """
         )
 
@@ -84,6 +118,19 @@ def _default_config_dict() -> dict[str, Any]:
             "email_body": "div.gs div.ii",
         },
         "browser": {"prelaunch": False},
+        "digest": {
+            "enabled": False,
+            "cadence": "daily",
+            "local_time": "08:00",
+            "timezone": "",
+            "weekday": 0,
+            "keyword": "",
+            "instruction": "请用自然语气总结这些邮件，重点关注活动、课程作业和重要事项。",
+            "mode": "daily",
+            "email_count": 10,
+            "last_success_at": None,
+            "last_success_period": None,
+        },
     }
 
 
@@ -133,12 +180,22 @@ def load_user_config(user_id: int) -> dict[str, Any]:
             (user_id,),
         ).fetchone()
     if not row:
-        return _default_config_dict()
-    try:
-        data = json.loads(row["config_json"])
-        return data if isinstance(data, dict) else _default_config_dict()
-    except Exception:
-        return _default_config_dict()
+        cfg = _default_config_dict()
+    else:
+        try:
+            data = json.loads(row["config_json"])
+            cfg = data if isinstance(data, dict) else _default_config_dict()
+        except Exception:
+            cfg = _default_config_dict()
+    d_raw = cfg.get("digest")
+    if not isinstance(d_raw, dict):
+        cfg["digest"] = _default_config_dict()["digest"].copy()
+    else:
+        base = _default_config_dict()["digest"]
+        merged = dict(base)
+        merged.update(d_raw)
+        cfg["digest"] = merged
+    return cfg
 
 
 def save_user_config(user_id: int, config: dict[str, Any]) -> None:
@@ -239,3 +296,183 @@ def update_username(user_id: int, new_username: str) -> tuple[bool, str]:
         return True, "ok"
     except Exception as e:
         return False, str(e)
+
+
+def list_user_ids() -> list[int]:
+    with _conn() as c:
+        rows = c.execute("SELECT id FROM users ORDER BY id").fetchall()
+    return [int(r["id"]) for r in rows]
+
+
+def digest_has_success_artifact(user_id: int, period_label: str) -> bool:
+    with _conn() as c:
+        row = c.execute(
+            """
+            SELECT 1 FROM digest_artifacts
+            WHERE user_id = ? AND period_label = ? AND status = 'success'
+            LIMIT 1
+            """,
+            (user_id, period_label),
+        ).fetchone()
+    return row is not None
+
+
+def digest_has_active_job_for_period(user_id: int, period_label: str) -> bool:
+    with _conn() as c:
+        row = c.execute(
+            """
+            SELECT 1 FROM digest_jobs
+            WHERE user_id = ? AND period_label = ?
+              AND status IN ('pending', 'running')
+            LIMIT 1
+            """,
+            (user_id, period_label),
+        ).fetchone()
+    return row is not None
+
+
+def digest_has_terminal_job_for_period(user_id: int, period_label: str) -> bool:
+    """本周期已有终态任务（成功/失败/跳过），避免失败后每轮重复入队。"""
+    with _conn() as c:
+        row = c.execute(
+            """
+            SELECT 1 FROM digest_jobs
+            WHERE user_id = ? AND period_label = ?
+              AND status IN ('completed', 'failed', 'skipped')
+            LIMIT 1
+            """,
+            (user_id, period_label),
+        ).fetchone()
+    return row is not None
+
+
+def digest_enqueue_job(
+    user_id: int, period_label: str, run_at_iso: str, payload: dict[str, Any]
+) -> Optional[int]:
+    if digest_has_success_artifact(user_id, period_label):
+        return None
+    if digest_has_active_job_for_period(user_id, period_label):
+        return None
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    payload_json = json.dumps(payload, ensure_ascii=False)
+    with _conn() as c:
+        cur = c.execute(
+            """
+            INSERT INTO digest_jobs
+            (user_id, period_label, run_at, status, payload_json, created_at)
+            VALUES (?, ?, ?, 'pending', ?, ?)
+            """,
+            (user_id, period_label, run_at_iso, payload_json, now),
+        )
+        return int(cur.lastrowid)
+
+
+def digest_claim_next_job(now_iso: str) -> Optional[dict[str, Any]]:
+    with _conn() as c:
+        row = c.execute(
+            """
+            SELECT * FROM digest_jobs
+            WHERE status = 'pending' AND run_at <= ?
+            ORDER BY run_at ASC, id ASC
+            LIMIT 1
+            """,
+            (now_iso,),
+        ).fetchone()
+        if not row:
+            return None
+        jid = int(row["id"])
+        c.execute(
+            """
+            UPDATE digest_jobs
+            SET status = 'running', started_at = ?
+            WHERE id = ? AND status = 'pending'
+            """,
+            (now_iso, jid),
+        )
+        if c.total_changes != 1:
+            return None
+        row2 = c.execute("SELECT * FROM digest_jobs WHERE id = ?", (jid,)).fetchone()
+    return dict(row2) if row2 else None
+
+
+def digest_finish_job(
+    job_id: int,
+    status: str,
+    *,
+    error_message: Optional[str] = None,
+    artifact_id: Optional[int] = None,
+) -> None:
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    with _conn() as c:
+        c.execute(
+            """
+            UPDATE digest_jobs
+            SET status = ?, finished_at = ?, error_message = ?, artifact_id = ?
+            WHERE id = ?
+            """,
+            (status, now, error_message, artifact_id, job_id),
+        )
+
+
+def digest_insert_artifact(
+    user_id: int,
+    job_id: Optional[int],
+    period_label: str,
+    cadence: str,
+    started_at: str,
+    finished_at: str,
+    status: str,
+    summary_text: Optional[str],
+    result_json: Optional[str],
+    error_message: Optional[str],
+) -> int:
+    with _conn() as c:
+        cur = c.execute(
+            """
+            INSERT INTO digest_artifacts
+            (user_id, job_id, period_label, cadence, started_at, finished_at,
+             status, summary_text, result_json, error_message)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                user_id,
+                job_id,
+                period_label,
+                cadence,
+                started_at,
+                finished_at,
+                status,
+                summary_text,
+                result_json,
+                error_message,
+            ),
+        )
+        return int(cur.lastrowid)
+
+
+def digest_list_artifacts(user_id: int, limit: int = 30) -> list[dict[str, Any]]:
+    lim = max(1, min(int(limit), 100))
+    with _conn() as c:
+        rows = c.execute(
+            """
+            SELECT id, user_id, job_id, period_label, cadence, started_at, finished_at,
+                   status, summary_text, result_json, error_message
+            FROM digest_artifacts
+            WHERE user_id = ?
+            ORDER BY COALESCE(finished_at, started_at) DESC, id DESC
+            LIMIT ?
+            """,
+            (user_id, lim),
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def digest_update_user_success_meta(
+    user_id: int, period_label: str, success_at_iso: str
+) -> None:
+    cfg = load_user_config(user_id)
+    if "digest" not in cfg or not isinstance(cfg["digest"], dict):
+        cfg["digest"] = _default_config_dict()["digest"].copy()
+    cfg["digest"]["last_success_at"] = success_at_iso
+    cfg["digest"]["last_success_period"] = period_label
+    save_user_config(user_id, cfg)

@@ -18,6 +18,7 @@ debug_*.png
 src/dev_extract_bodies_*.txt
 src/dev_extract_bodies_ALL.json
 src/deep_scan_result.json
+src/deep_scan_exports/
 
 # ====== OS ======
 .DS_Store
