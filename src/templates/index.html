@@ -1089,6 +1089,8 @@
         .digest-panel {
             margin-top: 4px;
             display: none;
+            padding: 20px;
+            overflow: hidden;
         }
 
         .workspace-aside .digest-panel {
@@ -1193,6 +1195,11 @@
             flex-wrap: wrap;
             gap: 8px;
             align-items: center;
+            min-width: 0;
+        }
+
+        .digest-head-actions > button {
+            max-width: 100%;
         }
 
         .digest-panel-actions {
@@ -1202,12 +1209,46 @@
             align-items: center;
         }
 
+        .digest-panel-actions > * {
+            flex: 1 1 180px;
+        }
+
+        .digest-toggle-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            line-height: 1.45;
+        }
+
+        .digest-toggle-label input {
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .digest-settings-col,
+        .digest-history-col {
+            min-width: 0;
+        }
+
+        .digest-settings-col {
+            display: grid;
+            gap: 10px;
+            align-content: start;
+        }
+
+        .digest-history-col {
+            border-left: 1px solid var(--border);
+            padding-left: 16px;
+            min-height: 100%;
+        }
+
         .digest-note {
             font-size: 0.78rem;
             line-height: 1.5;
             color: var(--text-muted);
             margin-bottom: 14px;
             max-width: 65ch;
+            overflow-wrap: anywhere;
         }
 
         .digest-layout {
@@ -1215,6 +1256,18 @@
             grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.35fr);
             gap: 20px;
             align-items: start;
+        }
+
+        .workspace-aside .digest-layout {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .workspace-aside .digest-history-col {
+            border-left: none;
+            border-top: 1px dashed var(--border-strong);
+            padding-left: 0;
+            padding-top: 14px;
         }
 
         @media (max-width: 767px) {
@@ -1280,6 +1333,7 @@
             font-size: 0.75rem;
             color: var(--text-muted);
             margin-bottom: 6px;
+            overflow-wrap: anywhere;
         }
 
         .digest-history-row-status {
@@ -1313,6 +1367,7 @@
             line-height: 1.45;
             max-height: 3.1em;
             overflow: hidden;
+            overflow-wrap: anywhere;
         }
 
         .digest-history-body {
@@ -1322,6 +1377,7 @@
             line-height: 1.55;
             color: var(--text-main);
             white-space: pre-wrap;
+            overflow-wrap: anywhere;
             padding: 10px 12px;
             border-radius: var(--radius-sm);
             background: var(--bg-code);
@@ -3525,7 +3581,7 @@
                         </div>
                     </section>
 
-                    <section class="panel digest-panel" id="digestPanel" aria-labelledby="digestHeading" aria-hidden="true">
+                    <section class="panel digest-panel digest-panel-open" id="digestPanel" aria-labelledby="digestHeading" aria-hidden="false">
                         <div class="digest-head-row">
                             <div class="digest-head panel-title">
                                 <small data-i18n="digest.subtitle">自动运行</small>
