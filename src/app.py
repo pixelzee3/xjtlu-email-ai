@@ -32,6 +32,9 @@ async def global_exception_handler(request: Request, exc: Exception):
 # Setup templates
 templates = Jinja2Templates(directory="templates")
 
+# Serve static files (i18n translations, etc.)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 # Global state to hold browser instance and search results
 class AppState:
     def __init__(self):
