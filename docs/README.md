@@ -2,6 +2,11 @@
 
 > 一个基于 Playwright + LLM 的 XJTLU 邮箱自动总结工具，支持关键词搜索、智能提取正文并生成中文摘要。
 
+## Documentation Index
+
+- [`i18n-translation-workflow.md`](i18n-translation-workflow.md): translation workflow for developers, including `data-i18n*` usage and JSON key conventions.
+- [`../AGENTS.md`](../AGENTS.md): mandatory i18n rules for coding agents (Cursor, Claude Code, Codex, etc.).
+
 ## ✨ 功能特性
 
 - 🔍 **关键词检索** — 搜索收件箱，或直接获取最新邮件
@@ -46,12 +51,14 @@ playwright install msedge
 现在您可以通过 **Web 界面直接进行可视化配置**，极低门槛！
 
 #### 💡 方案 A：Web 可视化配置 (推荐)
+
 1. 跳到 **4. 启动** 章节，直接运行并在浏览器打开程序。
 2. 点击页面右上角的 **“⚙️ 设置/配置”**。
 3. 在弹窗中录入您的 AI 密钥、Base URL 和 Cookie（剪切板 JSON 粘贴）。
 4. **高级设置** 中可自定义邮箱的 OWA 链接。保存即刻生效。
 
 #### 方案 B：手动编辑配置文件 (传统方式)
+
 若无法使用网页版，可复制模板并填入信息：
 
 ```bash
@@ -86,6 +93,7 @@ cp src/config.example.json src/config.json
 **Windows（新手推荐）**：先双击 **`run_helper.bat`** 完成环境与依赖检查，再在窗口中启动主程序；或直接双击 **`run_app.bat`**（已熟悉环境时）。
 
 **命令行**：
+
 ```bash
 cd src
 python app.py
@@ -99,6 +107,7 @@ python app.py
 > **安全提示**：请勿在公开场合泄露密码；若曾在聊天/代码中暴露过密码，请尽快在数据库中更新或删除对应用户后重新注册。
 
 **命令行模式（无 Web 登录）**：
+
 ```bash
 cd src
 python main.py
@@ -108,26 +117,26 @@ python main.py
 
 ## ⚙️ 技术栈
 
-| 模块 | 技术 |
-|------|------|
+| 模块         | 技术                        |
+| ------------ | --------------------------- |
 | 浏览器自动化 | Playwright (Microsoft Edge) |
-| Web 服务 | FastAPI + Uvicorn |
-| AI 接口 | OpenAI 兼容 API |
-| 正文解析 | BeautifulSoup4 |
+| Web 服务     | FastAPI + Uvicorn           |
+| AI 接口      | OpenAI 兼容 API             |
+| 正文解析     | BeautifulSoup4              |
 
 ---
 
 ## 📝 配置文件说明
 
-| 字段 | 说明 |
-|------|------|
-| `ai.base_url` | LLM API 地址（支持 OpenAI / DeepSeek 等） |
-| `ai.api_key` | API Key |
-| `ai.model` | 使用的模型名称 |
-| `email.url` | 邮箱 URL（默认 XJTLU） |
-| `email.cookie_file` | Netscape 格式 Cookie 文件路径 |
-| `email.cookies` | Cookie JSON 数组（与 cookie_file 二选一） |
-| `selectors.*` | 页面 CSS 选择器（如 OWA 更新 UI 后调整） |
+| 字段                | 说明                                      |
+| ------------------- | ----------------------------------------- |
+| `ai.base_url`       | LLM API 地址（支持 OpenAI / DeepSeek 等） |
+| `ai.api_key`        | API Key                                   |
+| `ai.model`          | 使用的模型名称                            |
+| `email.url`         | 邮箱 URL（默认 XJTLU）                    |
+| `email.cookie_file` | Netscape 格式 Cookie 文件路径             |
+| `email.cookies`     | Cookie JSON 数组（与 cookie_file 二选一） |
+| `selectors.*`       | 页面 CSS 选择器（如 OWA 更新 UI 后调整）  |
 
 ---
 
