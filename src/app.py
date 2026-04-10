@@ -1289,10 +1289,8 @@ async def interactive_mail_login_start(request: Request):
             )
             context = await browser.new_context()
             page = await context.new_page()
-            await page.goto(mail_url, wait_until="domcontentloaded", timeout=90000)
-            await page.wait_for_timeout(600)
         except Exception as e:
-            logger.exception("interactive_mail_login_start")
+            logger.exception("interactive_mail_login_start: launch browser")
             try:
                 if context:
                     await context.close()
@@ -1313,6 +1311,48 @@ async def interactive_mail_login_start(request: Request):
                 content={"status": "error",
                          "message": f"无法打开浏览器: {str(e)[:120]}"},
             )
+
+        # 未注入 Cookie 的首次访问经常触发 OWA/ADFS 的重定向链路，
+        # 部分网络上重定向中途会被服务器关闭连接（ERR_CONNECTION_CLOSED /
+        # ERR_ABORTED frame detached），但窗口已经打开且用户可以手动完成登录。
+        # 因此这里把导航失败降级为告警，只要页面和浏览器仍然可用就继续流程。
+        try:
+            await page.goto(mail_url, wait_until="domcontentloaded", timeout=90000)
+            await page.wait_for_timeout(600)
+        except Exception as nav_err:
+            logger.warning(
+                "interactive_mail_login_start: initial goto failed, letting the user navigate manually: %s",
+                repr(nav_err),
+            )
+            if page.is_closed():
+                try:
+                    if context:
+                        await context.close()
+                except Exception:
+                    pass
+                try:
+                    if browser:
+                        await browser.close()
+                except Exception:
+                    pass
+                try:
+                    if pw:
+                        await pw.stop()
+                except Exception:
+                    pass
+                return JSONResponse(
+                    status_code=500,
+                    content={
+                        "status": "error",
+                        "message": f"浏览器页面已关闭，无法继续登录: {str(nav_err)[:120]}",
+                    },
+                )
+            # 页面仍然存活：尝试再次打开一个 about:blank 让用户从地址栏手动跳转，
+            # 或者保持在当前（可能已部分渲染的）页面上，由用户自行刷新。
+            try:
+                await page.wait_for_timeout(300)
+            except Exception:
+                pass
 
         state.playwright = pw
         state.browser = browser
