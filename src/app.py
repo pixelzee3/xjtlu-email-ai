@@ -8,6 +8,7 @@ if sys.platform == "win32":
 from pathlib import Path
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, Field
 import uvicorn
@@ -303,6 +304,13 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# Serve static files (i18n translations, etc.)
+app.mount(
+    "/static",
+    StaticFiles(directory=str(Path(__file__).resolve().parent / "static")),
+    name="static",
+)
+
 _session_secret = os.environ.get("SESSION_SECRET", "dev-local-change-me")
 app.add_middleware(
     SessionMiddleware,
@@ -323,7 +331,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 # Setup templates
-templates = Jinja2Templates(directory=Path(__file__).parent / "templates")
+templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
 
 # 深度模式：列表与单次分析上限（深度扫描、正文提取、前端文案一致，最多 100 封）
 DEEP_MAX_EMAILS = 100
@@ -682,14 +690,14 @@ class DigestSettingsRequest(BaseModel):
 async def login_page(request: Request):
     if _session_user_id(request) is not None:
         return RedirectResponse("/", status_code=302)
-    return templates.TemplateResponse(request, "login.html", {"request": request})
+    return templates.TemplateResponse(request, "login.html")
 
 
 @app.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request):
     if _session_user_id(request) is not None:
         return RedirectResponse("/", status_code=302)
-    return templates.TemplateResponse(request, "register.html", {"request": request})
+    return templates.TemplateResponse(request, "register.html")
 
 
 @app.post("/api/auth/login")
@@ -2340,7 +2348,6 @@ async def read_root(request: Request):
         request,
         "index.html",
         {
-            "request": request,
             "mail_url": mail_url,
             "current_username": u["username"] if u else "",
             "current_email": u["email"] if u else "",

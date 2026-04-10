@@ -67,13 +67,13 @@ python app.py
 
 ## ⚙️ 技术栈
 
-| 模块 | 技术 |
-|------|------|
-| 浏览器自动化 | Playwright (Microsoft Edge) |
-| Web 服务 | FastAPI + Uvicorn |
-| AI 接口 | OpenAI 兼容 API（并行批量调用） |
-| 正文解析 | BeautifulSoup4 |
-| 本地账号 | SQLite + bcrypt |
+| 模块         | 技术                            |
+| ------------ | ------------------------------- |
+| 浏览器自动化 | Playwright (Microsoft Edge)     |
+| Web 服务     | FastAPI + Uvicorn               |
+| AI 接口      | OpenAI 兼容 API（并行批量调用） |
+| 正文解析     | BeautifulSoup4                  |
+| 本地账号     | SQLite + bcrypt                 |
 
 ---
 
@@ -98,13 +98,13 @@ python app.py
 
 ## 📝 配置说明
 
-| 字段 | 说明 |
-|------|------|
-| `ai.base_url` | LLM API 地址 |
-| `ai.api_key` | API Key |
-| `ai.model` | 模型名称（如 `gpt-4o-mini`） |
-| `email.url` | 邮箱 URL（默认 XJTLU OWA） |
-| `email.cookies` | Cookie JSON 数组 |
+| 字段                | 说明                             |
+| ------------------- | -------------------------------- |
+| `ai.base_url`       | LLM API 地址                     |
+| `ai.api_key`        | API Key                          |
+| `ai.model`          | 模型名称（如 `gpt-4o-mini`）     |
+| `email.url`         | 邮箱 URL（默认 XJTLU OWA）       |
+| `email.cookies`     | Cookie JSON 数组                 |
 | `email.cookie_file` | 或 Netscape 格式 Cookie 文件路径 |
 
 > 推荐通过 **Web 界面设置**，无需手动编辑文件。
@@ -121,13 +121,15 @@ python app.py
 
 ## 📚 更多文档
 
-| 文档 | 说明 |
-|------|------|
-| [`docs/README.md`](docs/README.md) | 完整技术文档与部署说明 |
-| [`docs/维护指南.txt`](docs/维护指南.txt) | Cookie 过期、OWA 调整等运维指南 |
-| [`docs/项目完整介绍与文件说明.txt`](docs/项目完整介绍与文件说明.txt) | 每个文件的作用详解 |
-| [`docs/校友产品优先级计划.md`](docs/校友产品优先级计划.md) | 产品路线图 |
-| [`docs/在线部署与本地抓取方案教程.txt`](docs/在线部署与本地抓取方案教程.txt) | 上线部署教程 |
+| 文档                                                                         | 说明                                                     |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------- |
+| [`docs/README.md`](docs/README.md)                                           | 完整技术文档与部署说明                                   |
+| [`docs/i18n-translation-workflow.md`](docs/i18n-translation-workflow.md)     | 前端中英文本地化（i18n）开发与补译流程                   |
+| [`AGENTS.md`](AGENTS.md)                                                     | 面向 Cursor / Claude Code / Codex 等代理的 i18n 执行规范 |
+| [`docs/维护指南.txt`](docs/维护指南.txt)                                     | Cookie 过期、OWA 调整等运维指南                          |
+| [`docs/项目完整介绍与文件说明.txt`](docs/项目完整介绍与文件说明.txt)         | 每个文件的作用详解                                       |
+| [`docs/校友产品优先级计划.md`](docs/校友产品优先级计划.md)                   | 产品路线图                                               |
+| [`docs/在线部署与本地抓取方案教程.txt`](docs/在线部署与本地抓取方案教程.txt) | 上线部署教程                                             |
 
 ---
 

@@ -1,5 +1,5 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
+    <!DOCTYPE html>
+<html lang="zh-CN" data-i18n-title="title">
 
 <head>
     <meta charset="UTF-8">
@@ -10,6 +10,7 @@
         rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+    <script src="/static/i18n/i18n.js"></script>
     <script>
         window.onload = function () {
             if (typeof marked === "undefined") {
@@ -1088,6 +1089,8 @@
         .digest-panel {
             margin-top: 4px;
             display: none;
+            padding: 20px;
+            overflow: hidden;
         }
 
         .workspace-aside .digest-panel {
@@ -1192,6 +1195,11 @@
             flex-wrap: wrap;
             gap: 8px;
             align-items: center;
+            min-width: 0;
+        }
+
+        .digest-head-actions > button {
+            max-width: 100%;
         }
 
         .digest-panel-actions {
@@ -1201,12 +1209,46 @@
             align-items: center;
         }
 
+        .digest-panel-actions > * {
+            flex: 1 1 180px;
+        }
+
+        .digest-toggle-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            line-height: 1.45;
+        }
+
+        .digest-toggle-label input {
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .digest-settings-col,
+        .digest-history-col {
+            min-width: 0;
+        }
+
+        .digest-settings-col {
+            display: grid;
+            gap: 10px;
+            align-content: start;
+        }
+
+        .digest-history-col {
+            border-left: 1px solid var(--border);
+            padding-left: 16px;
+            min-height: 100%;
+        }
+
         .digest-note {
             font-size: 0.78rem;
             line-height: 1.5;
             color: var(--text-muted);
             margin-bottom: 14px;
             max-width: 65ch;
+            overflow-wrap: anywhere;
         }
 
         .digest-layout {
@@ -1214,6 +1256,18 @@
             grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.35fr);
             gap: 20px;
             align-items: start;
+        }
+
+        .workspace-aside .digest-layout {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .workspace-aside .digest-history-col {
+            border-left: none;
+            border-top: 1px dashed var(--border-strong);
+            padding-left: 0;
+            padding-top: 14px;
         }
 
         @media (max-width: 767px) {
@@ -1279,6 +1333,7 @@
             font-size: 0.75rem;
             color: var(--text-muted);
             margin-bottom: 6px;
+            overflow-wrap: anywhere;
         }
 
         .digest-history-row-status {
@@ -1312,6 +1367,7 @@
             line-height: 1.45;
             max-height: 3.1em;
             overflow: hidden;
+            overflow-wrap: anywhere;
         }
 
         .digest-history-body {
@@ -1321,6 +1377,7 @@
             line-height: 1.55;
             color: var(--text-main);
             white-space: pre-wrap;
+            overflow-wrap: anywhere;
             padding: 10px 12px;
             border-radius: var(--radius-sm);
             background: var(--bg-code);
@@ -3272,21 +3329,25 @@
             <div class="topbar">
                 <div class="brand-stack">
                     <div class="eyebrow">XJTLU</div>
-                    <div class="brand-title">邮件摘要助手</div>
+                    <div class="brand-title" data-i18n="topbar.brand">邮件摘要助手</div>
                 </div>
                 <div class="topbar-actions">
                     <span class="action-chip user-pill-container" id="userPill">
                         <span id="userPillText" class="mono user-pill-text-inner">{{ current_username }} · {{ current_email }}</span>
                     </span>
-                    <button type="button" class="action-chip" onclick="logout()">退出</button>
-                    <a class="action-link" href="{{ mail_url }}" target="_blank" rel="noopener noreferrer">打开邮箱网页</a>
+                    <button type="button" class="action-chip" onclick="logout()" data-i18n="topbar.logout">退出</button>
+                    <a class="action-link" href="{{ mail_url }}" target="_blank" rel="noopener noreferrer" data-i18n="topbar.open_mailbox">打开邮箱网页</a>
                     <button class="action-chip" id="themeToggle" onclick="toggleTheme()">
                         <span class="chip-mark" id="themeIcon" aria-hidden="true">·</span>
-                        <span id="themeLabel">深色模式</span>
+                        <span id="themeLabel" data-i18n="topbar.theme_dark">深色模式</span>
                     </button>
-                    <button type="button" class="action-chip" id="digestOpenBtn" onclick="openDigestPanel()">定时摘要</button>
-                    <button class="action-chip" onclick="openModal()">使用说明</button>
-                    <button class="action-chip" onclick="openSettingsModal()">设置</button>
+                    <button class="action-chip" id="langToggle" onclick="i18n.toggle()">
+                        <span class="chip-mark" aria-hidden="true">A</span>
+                        <span id="langLabel">EN</span>
+                    </button>
+                    <button type="button" class="action-chip" id="digestOpenBtn" onclick="openDigestPanel()" data-i18n="topbar.digest">定时摘要</button>
+                    <button class="action-chip" onclick="openModal()" data-i18n="topbar.guide">使用说明</button>
+                    <button class="action-chip" onclick="openSettingsModal()" data-i18n="topbar.settings">设置</button>
                 </div>
             </div>
 
@@ -3297,8 +3358,8 @@
                             <div class="hero-copy-inner">
                                 <div class="hero-title-group">
                                     <div class="hero-title-row">
-                                        <h1 id="heroTitle" class="hero-title-custom" aria-label="主标题"></h1>
-                                        <button type="button" class="btn-text hero-edit-btn" id="heroEditOpenBtn" title="自定义标题样式">编辑标题</button>
+                                        <h1 id="heroTitle" class="hero-title-custom" data-i18n-aria-label="hero.aria_label" aria-label="主标题"></h1>
+                                        <button type="button" class="btn-text hero-edit-btn" id="heroEditOpenBtn" data-i18n-title="hero.edit_btn_title" data-i18n="hero.edit_btn" title="自定义标题样式">编辑标题</button>
                                     </div>
                                 </div>
                             </div>
@@ -3309,133 +3370,133 @@
                         <div class="welcome-slot" id="welcomeBanner"></div>
                         <div class="cookie-panel-top">
                             <div class="panel-title">
-                                <h3>连接校园邮箱</h3>
+                                <h3 data-i18n="cookie.title">连接校园邮箱</h3>
                             </div>
-                            <span class="cookie-pill" id="cookiePill">待验证</span>
+                            <span class="cookie-pill" id="cookiePill" data-i18n="cookie.pill_unverified">待验证</span>
                         </div>
-                        <p class="cookie-interactive-hint">点击「打开登录窗口」，在 Edge 中登录网页邮箱（支持二次验证），回到此页点击「我已登录」。也可在下方高级区粘贴 Cookie JSON。</p>
+                        <p class="cookie-interactive-hint" data-i18n="cookie.hint">点击「打开登录窗口」，在 Edge 中登录网页邮箱（支持二次验证），回到此页点击「我已登录」。也可在下方高级区粘贴 Cookie JSON。</p>
                         <div class="cookie-actions">
-                            <button class="btn-primary" type="button" id="interactiveMailStartBtn" onclick="startInteractiveMailLogin()">打开登录窗口</button>
-                            <button class="btn-save" type="button" id="interactiveMailDoneBtn" onclick="completeInteractiveMailLogin()">我已登录</button>
-                            <button class="btn-secondary" type="button" id="interactiveMailCancelBtn" onclick="cancelInteractiveMailLogin()">取消</button>
+                            <button class="btn-primary" type="button" id="interactiveMailStartBtn" onclick="startInteractiveMailLogin()" data-i18n="cookie.btn_open_login">打开登录窗口</button>
+                            <button class="btn-save" type="button" id="interactiveMailDoneBtn" onclick="completeInteractiveMailLogin()" data-i18n="cookie.btn_logged_in">我已登录</button>
+                            <button class="btn-secondary" type="button" id="interactiveMailCancelBtn" onclick="cancelInteractiveMailLogin()" data-i18n="cookie.btn_cancel">取消</button>
                         </div>
                         <details class="cookie-advanced-details" id="cookieAdvancedDetails">
-                            <summary>高级：粘贴 Cookie（Cookie-Editor 导出 JSON）</summary>
+                            <summary data-i18n="cookie.advanced_summary">高级：粘贴 Cookie（Cookie-Editor 导出 JSON）</summary>
                             <div class="cookie-editor">
                                 <textarea id="emailCookies" placeholder='[{"name": "...", "value": "...", "domain": "..."}]'></textarea>
                             </div>
                         </details>
                         <div class="cookie-actions">
                             <button class="action-chip" id="cookieStatusBtn" onclick="checkCookieStatus()">
-                                <span class="chip-mark" id="cookieIcon">验</span>
-                                <span id="cookieLabel">验证连接</span>
+                                <span class="chip-mark" id="cookieIcon" data-i18n="cookie.chip_icon">验</span>
+                                <span id="cookieLabel" data-i18n="cookie.chip_label">验证连接</span>
                             </button>
-                            <button class="btn-save" type="button" onclick="saveCookieOnly()">保存 Cookie</button>
-                            <button class="btn-secondary" type="button" onclick="clearCookieEditor()">清空</button>
+                            <button class="btn-save" type="button" onclick="saveCookieOnly()" data-i18n="cookie.btn_save">保存 Cookie</button>
+                            <button class="btn-secondary" type="button" onclick="clearCookieEditor()" data-i18n="cookie.btn_clear">清空</button>
                         </div>
                     </section>
 
                     <section class="panel command-panel" id="commandPanel">
                         <div class="command-header">
-                            <h2>生成邮件摘要</h2>
-                            <p class="input-hint command-lead">关键词可留空，表示按列表读取最近若干封。总结指令会告诉模型你更关心哪些事务。</p>
+                            <h2 data-i18n="command.title">生成邮件摘要</h2>
+                            <p class="input-hint command-lead" data-i18n="command.lead">关键词可留空，表示按列表读取最近若干封。总结指令会告诉模型你更关心哪些事务。</p>
                         </div>
-                        <p class="mailbox-gate-hint" id="mailboxGateHint" role="status">请先在上方连接校园邮箱并验证通过。</p>
+                        <p class="mailbox-gate-hint" id="mailboxGateHint" role="status" data-i18n="command.gate_hint">请先在上方连接校园邮箱并验证通过。</p>
                         <div class="command-form-wrap" id="commandFormWrap">
                             <div class="input-section">
                                 <div class="input-group">
-                                    <label for="keyword">搜索关键词（可选）</label>
+                                    <label for="keyword" data-i18n="command.keyword_label">搜索关键词（可选）</label>
                                     <div class="input-wrapper">
                                         <span class="input-icon"></span>
-                                        <input type="text" id="keyword" placeholder="留空则取最近邮件；填写则先搜索再取前 N 封">
+                                        <input type="text" id="keyword" data-i18n-placeholder="command.keyword_placeholder" placeholder="留空则取最近邮件；填写则先搜索再取前 N 封">
                                     </div>
                                 </div>
                                 <div class="input-group">
-                                    <label for="instruction">总结指令</label>
+                                    <label for="instruction" data-i18n="command.instruction_label">总结指令</label>
                                     <div class="prompt-presets" id="mainPromptPresets"></div>
                                     <div class="input-wrapper">
                                         <span class="input-icon"></span>
-                                        <textarea id="instruction" rows="4" placeholder="希望摘要侧重哪些方面…">请用自然语气总结这些邮件，重点关注活动、课程作业和重要事项。每封邮件的内容总结写充分：该封的关键信息、时间地点、需办事项尽量写全，不要为省字数过度压缩。</textarea>
+                                        <textarea id="instruction" rows="4" data-i18n-placeholder="command.instruction_placeholder" placeholder="希望摘要侧重哪些方面…">请用自然语气总结这些邮件，重点关注活动、课程作业和重要事项。每封邮件的内容总结写充分：该封的关键信息、时间地点、需办事项尽量写全，不要为省字数过度压缩。</textarea>
                                     </div>
                                 </div>
                                 <div class="input-group" id="emailCountGroup">
-                                    <label for="emailCount">本轮最多处理几封</label>
+                                    <label for="emailCount" data-i18n="command.email_count_label">本轮最多处理几封</label>
                                     <div class="input-wrapper">
                                         <span class="input-icon"></span>
                                         <input type="number" id="emailCount" min="1" max="10" step="1" value="10" oninput="enforceMailCountLimit()">
                                     </div>
-                                    <div class="input-hint" id="emailCountHint">范围 1–10。模型会分批阅读邮件再汇总。</div>
+                                    <div class="input-hint" id="emailCountHint" data-i18n="command.email_count_hint">范围 1–10。模型会分批阅读邮件再汇总。</div>
                                 </div>
                             </div>
                             <div class="command-actions">
                                 <button class="btn-primary" id="runBtn" onclick="handleStep2Primary()">
                                     <span class="spinner"></span>
-                                    <span class="btn-label">生成邮件摘要</span>
+                                    <span class="btn-label" data-i18n="command.btn_generate">生成邮件摘要</span>
                                 </button>
                             </div>
                             <details id="deepWorkflowDetails" class="workflow-advanced-details">
-                                <summary>高级：深度扫描（最多 100 封）再筛选分析</summary>
-                                <p class="input-hint deep-scan-hint">适用于从较多邮件中按分类、日期勾选后再一次性总结。先扫描列表（可能需数分钟），筛选后点击「分析选中的邮件」。</p>
+                                <summary data-i18n="deep.summary">高级：深度扫描（最多 100 封）再筛选分析</summary>
+                                <p class="input-hint deep-scan-hint" data-i18n="deep.hint">适用于从较多邮件中按分类、日期勾选后再一次性总结。先扫描列表（可能需数分钟），筛选后点击「分析选中的邮件」。</p>
                                 <div class="input-group">
-                                    <label>模式</label>
+                                    <label data-i18n="deep.mode_label">模式</label>
                                     <div class="mode-selector-wrap">
                                         <label class="mode-radio-label">
                                             <input type="radio" name="runMode" value="daily" checked onchange="updateMailCountLimit()">
-                                            快速摘要（与上方一致）
+                                            <span data-i18n="deep.mode_daily">快速摘要（与上方一致）</span>
                                         </label>
                                         <label class="mode-radio-label">
                                             <input type="radio" name="runMode" value="deep" onchange="updateMailCountLimit()">
-                                            深度扫描流程
+                                            <span data-i18n="deep.mode_deep">深度扫描流程</span>
                                         </label>
                                     </div>
                                 </div>
                                 <div id="deepScanPanel" class="deep-scan-panel">
                             <div id="deepScanResults" class="deep-scan-results">
                                 <div class="deep-scan-filters">
-                                    <span class="filter-label">日期范围</span>
-                                    <input type="date" id="deepDateFrom" class="deep-date-input" aria-label="开始日期" />
+                                    <span class="filter-label" data-i18n="deep.date_range">日期范围</span>
+                                    <input type="date" id="deepDateFrom" class="deep-date-input" data-i18n-aria-label="deep.date_from_aria" aria-label="开始日期" />
                                     <span class="deep-date-sep">—</span>
-                                    <input type="date" id="deepDateTo" class="deep-date-input" aria-label="结束日期" />
+                                    <input type="date" id="deepDateTo" class="deep-date-input" data-i18n-aria-label="deep.date_to_aria" aria-label="结束日期" />
                                 </div>
                                 <div id="deepPriorityPanel" class="deep-priority-panel">
                                     <div class="deep-priority-head">
-                                        <span class="deep-priority-title">优先查看</span>
+                                        <span class="deep-priority-title" data-i18n="deep.priority_title">优先查看</span>
                                     </div>
                                     <div id="deepPriorityDigest" class="deep-priority-digest empty" aria-live="polite"></div>
                                     <div id="deepPriorityTopCards" class="deep-priority-cards"></div>
                                     <div class="deep-list-toolbar">
-                                        <input type="search" id="deepListSearch" placeholder="搜索主题、发件人、预览…" autocomplete="off" />
-                                        <select id="deepSortSelect" aria-label="列表排序">
-                                            <option value="category">按分类分组</option>
-                                            <option value="priority">按优先级</option>
-                                            <option value="date">按日期</option>
+                                        <input type="search" id="deepListSearch" data-i18n-placeholder="deep.search_placeholder" placeholder="搜索主题、发件人、预览…" autocomplete="off" />
+                                        <select id="deepSortSelect" data-i18n-aria-label="deep.sort_aria" aria-label="列表排序">
+                                            <option value="category" data-i18n="deep.sort_category">按分类分组</option>
+                                            <option value="priority" data-i18n="deep.sort_priority">按优先级</option>
+                                            <option value="date" data-i18n="deep.sort_date">按日期</option>
                                         </select>
                                         <label class="deep-toolbar-cb"
-                                            ><input type="checkbox" id="deepFilterHighOnly" /> 只看高优先级</label
+                                            ><input type="checkbox" id="deepFilterHighOnly" /> <span data-i18n="deep.filter_high">只看高优先级</span></label
                                         >
                                         <label class="deep-toolbar-cb"
-                                            ><input type="checkbox" id="deepFilterActionable" /> 只看可行动</label
+                                            ><input type="checkbox" id="deepFilterActionable" /> <span data-i18n="deep.filter_actionable">只看可行动</span></label
                                         >
                                         <label class="deep-toolbar-cb"
-                                            ><input type="checkbox" id="deepFilterDeadline" /> 含截止时间线索</label
+                                            ><input type="checkbox" id="deepFilterDeadline" /> <span data-i18n="deep.filter_deadline">含截止时间线索</span></label
                                         >
                                     </div>
                                 </div>
                                 <div id="deepCategoryPieWrap" class="deep-pie-wrap">
                                     <div class="deep-pie-head">
-                                        <span class="deep-pie-title">分类分布</span>
+                                        <span class="deep-pie-title" data-i18n="deep.pie_title">分类分布</span>
                                     </div>
                                     <div id="deepCategoryPieChart" class="deep-pie-chart"></div>
-                                    <p id="deepCategoryPieEmpty" class="deep-pie-empty">暂无分类数据</p>
+                                    <p id="deepCategoryPieEmpty" class="deep-pie-empty" data-i18n="deep.pie_empty">暂无分类数据</p>
                                 </div>
-                                <p class="deep-scan-subhint">取消勾选某类别或收窄日期后，下方列表与「已选中」数量会同步更新。</p>
+                                <p class="deep-scan-subhint" data-i18n="deep.subhint">取消勾选某类别或收窄日期后，下方列表与「已选中」数量会同步更新。</p>
                                 <div id="deepCategoryTags" class="deep-scan-categories"></div>
                                 <div id="deepScanEmailList" class="deep-scan-list-wrap"></div>
                                 <p id="deepScanSelectedCount" class="deep-scan-count" aria-live="polite"></p>
                             </div>
                             <button type="button" class="btn-primary" id="analyzeSelectedBtn" onclick="runAnalyzeSelected()" disabled>
                                 <span class="spinner"></span>
-                                <span class="btn-label">分析选中的邮件</span>
+                                <span class="btn-label" data-i18n="deep.btn_analyze">分析选中的邮件</span>
                             </button>
                         </div>
                             </details>
@@ -3447,37 +3508,37 @@
                             <div class="progress-bar-fill" id="progressBarFill"></div>
                             <div class="step" id="step-connecting">
                                 <div class="step-circle">01</div>
-                                <span class="step-label">连接</span>
+                                <span class="step-label" data-i18n="progress.step_connect">连接</span>
                             </div>
                             <div class="step" id="step-searching">
                                 <div class="step-circle">02</div>
-                                <span class="step-label">搜索</span>
+                                <span class="step-label" data-i18n="progress.step_search">搜索</span>
                             </div>
                             <div class="step" id="step-extracting">
                                 <div class="step-circle">03</div>
-                                <span class="step-label">提取</span>
+                                <span class="step-label" data-i18n="progress.step_extract">提取</span>
                             </div>
                             <div class="step" id="step-summarizing">
                                 <div class="step-circle">04</div>
-                                <span class="step-label">总结</span>
+                                <span class="step-label" data-i18n="progress.step_summarize">总结</span>
                             </div>
                         </div>
-                        <p class="progress-detail" id="progressDetail">正在准备...</p>
+                        <p class="progress-detail" id="progressDetail" data-i18n="progress.preparing">正在准备...</p>
                     </div>
 
                     <div id="resultsHistory" class="results-container">
                         <div class="results-shell">
                             <div class="results-history-header">
                                 <div class="results-history-title">
-                                    <small>摘要记录</small>
-                                    <h2>摘要结果</h2>
+                                    <small data-i18n="results.record_label">摘要记录</small>
+                                    <h2 data-i18n="results.title">摘要结果</h2>
                                 </div>
                                 <div class="results-history-actions">
-                                    <button type="button" class="btn-clear-results" onclick="collapseAllResultEntries()">全部折叠</button>
-                                    <button type="button" class="btn-clear-results" onclick="clearAllResults()">清空全部</button>
+                                    <button type="button" class="btn-clear-results" onclick="collapseAllResultEntries()" data-i18n="results.btn_collapse">全部折叠</button>
+                                    <button type="button" class="btn-clear-results" onclick="clearAllResults()" data-i18n="results.btn_clear">清空全部</button>
                                 </div>
                             </div>
-                            <p class="results-empty-placeholder" id="resultsEmptyPlaceholder">暂无摘要。连接邮箱并验证通过后，点击「生成邮件摘要」，结果会出现在下方。</p>
+                            <p class="results-empty-placeholder" id="resultsEmptyPlaceholder" data-i18n="results.empty">暂无摘要。连接邮箱并验证通过后，点击「生成邮件摘要」，结果会出现在下方。</p>
                             <div class="results-entries" id="resultsEntries"></div>
                         </div>
                     </div>
@@ -3487,22 +3548,22 @@
                     <section class="panel security-panel">
                         <div class="panel-header security-panel-header">
                             <div class="panel-title">
-                                <small>Privacy & Security</small>
-                                <h3>安全承诺</h3>
+                                <small data-i18n="security.subtitle">Privacy & Security</small>
+                                <h3 data-i18n="security.title">安全承诺</h3>
                             </div>
                         </div>
                         <div class="security-content">
                             <div class="security-item">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                <span>会话与凭证保存在<strong class="text-strong">你的账号配置中</strong></span>
+                                <span data-i18n-html="security.item1"><span data-i18n="security.item1_pre">会话与凭证保存在</span><strong class="text-strong" data-i18n="security.item1_strong">你的账号配置中</strong></span>
                             </div>
                             <div class="security-item">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                                <span>正文仅用于当次生成摘要，<strong class="text-strong">不会用于模型训练</strong></span>
+                                <span data-i18n-html="security.item2"><span data-i18n="security.item2_pre">正文仅用于当次生成摘要，</span><strong class="text-strong" data-i18n="security.item2_strong">不会用于模型训练</strong></span>
                             </div>
                             <div class="security-item">
                                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                                <span><strong class="text-strong">不要求</strong>你在此输入统一身份认证密码</span>
+                                <span><strong class="text-strong" data-i18n="security.item3_strong">不要求</strong><span data-i18n="security.item3_post">你在此输入统一身份认证密码</span></span>
                             </div>
                         </div>
                     </section>
@@ -3510,25 +3571,25 @@
                     <section class="panel history-panel" id="historySection">
                         <div class="panel-header">
                             <div class="panel-title">
-                                <small>本地记录</small>
-                                <h3>搜索与指令历史</h3>
+                                <small data-i18n="history.subtitle">本地记录</small>
+                                <h3 data-i18n="history.title">搜索与指令历史</h3>
                             </div>
-                            <button class="btn-text" onclick="clearHistory()">清空</button>
+                            <button class="btn-text" onclick="clearHistory()" data-i18n="history.btn_clear">清空</button>
                         </div>
                         <div class="history-list" id="historyList">
-                            <span class="history-empty">暂无搜索记录</span>
+                            <span class="history-empty" data-i18n="history.empty">暂无搜索记录</span>
                         </div>
                     </section>
 
-                    <section class="panel digest-panel" id="digestPanel" aria-labelledby="digestHeading" aria-hidden="true">
+                    <section class="panel digest-panel digest-panel-open" id="digestPanel" aria-labelledby="digestHeading" aria-hidden="false">
                         <div class="digest-head-row">
                             <div class="digest-head panel-title">
-                                <small>自动运行</small>
-                                <h3 id="digestHeading">定时摘要</h3>
+                                <small data-i18n="digest.subtitle">自动运行</small>
+                                <h3 id="digestHeading" data-i18n="digest.title">定时摘要</h3>
                             </div>
                             <div class="digest-head-actions">
-                                <button type="button" class="digest-btn-pill-ghost" onclick="openDigestGuide()">说明</button>
-                                <button type="button" class="digest-btn-pill-ghost" onclick="closeDigestPanel()">收起</button>
+                                <button type="button" class="digest-btn-pill-ghost" onclick="openDigestGuide()" data-i18n="digest.btn_guide">说明</button>
+                                <button type="button" class="digest-btn-pill-ghost" onclick="closeDigestPanel()" data-i18n="digest.btn_collapse">收起</button>
                             </div>
                         </div>
                         <p class="digest-note" id="digestServerNote"></p>
@@ -3537,60 +3598,60 @@
                                 <div class="input-group">
                                     <label class="digest-toggle-label">
                                         <input type="checkbox" id="digestEnabled" />
-                                        开启定时自动摘要
+                                        <span data-i18n="digest.toggle_label">开启定时自动摘要</span>
                                     </label>
-                                    <p class="input-hint">在邮箱连接验证通过后，系统按下方设置在后台排队执行（多人使用时可能略有延迟）。</p>
+                                    <p class="input-hint" data-i18n="digest.toggle_hint">在邮箱连接验证通过后，系统按下方设置在后台排队执行（多人使用时可能略有延迟）。</p>
                                 </div>
                                 <div class="input-group">
-                                    <label for="digestCadence">节奏</label>
+                                    <label for="digestCadence" data-i18n="digest.cadence_label">节奏</label>
                                     <select id="digestCadence" class="digest-select" onchange="setDigestWeekdayVisibility()">
-                                        <option value="daily">每日</option>
-                                        <option value="weekly">每周</option>
+                                        <option value="daily" data-i18n="digest.cadence_daily">每日</option>
+                                        <option value="weekly" data-i18n="digest.cadence_weekly">每周</option>
                                     </select>
                                 </div>
                                 <div class="input-group digest-weekday-wrap" id="digestWeekdayWrap">
-                                    <label for="digestWeekday">每周的星期（0=周一 … 6=周日）</label>
+                                    <label for="digestWeekday" data-i18n="digest.weekday_label">每周的星期（0=周一 … 6=周日）</label>
                                     <select id="digestWeekday" class="digest-select">
-                                        <option value="0">周一</option>
-                                        <option value="1">周二</option>
-                                        <option value="2">周三</option>
-                                        <option value="3">周四</option>
-                                        <option value="4">周五</option>
-                                        <option value="5">周六</option>
-                                        <option value="6">周日</option>
+                                        <option value="0" data-i18n="digest.weekday_0">周一</option>
+                                        <option value="1" data-i18n="digest.weekday_1">周二</option>
+                                        <option value="2" data-i18n="digest.weekday_2">周三</option>
+                                        <option value="3" data-i18n="digest.weekday_3">周四</option>
+                                        <option value="4" data-i18n="digest.weekday_4">周五</option>
+                                        <option value="5" data-i18n="digest.weekday_5">周六</option>
+                                        <option value="6" data-i18n="digest.weekday_6">周日</option>
                                     </select>
                                 </div>
                                 <div class="input-group">
-                                    <label for="digestLocalTime">本地时间（服务器时钟）</label>
+                                    <label for="digestLocalTime" data-i18n="digest.time_label">本地时间（服务器时钟）</label>
                                     <input type="time" id="digestLocalTime" class="digest-field-round" step="60" />
-                                    <p class="input-hint" id="digestSemanticHint">到达该时刻后的摘要基于邮箱列表中最近的若干封邮件，不是严格的「过去 24 小时」全量。</p>
+                                    <p class="input-hint" id="digestSemanticHint" data-i18n="digest.time_hint">到达该时刻后的摘要基于邮箱列表中最近的若干封邮件，不是严格的「过去 24 小时」全量。</p>
                                 </div>
                                 <div class="input-group">
-                                    <label for="digestKeyword">搜索关键词（可选）</label>
-                                    <input type="text" id="digestKeyword" class="digest-field-round" placeholder="留空则取列表中最新的邮件" />
+                                    <label for="digestKeyword" data-i18n="digest.keyword_label">搜索关键词（可选）</label>
+                                    <input type="text" id="digestKeyword" class="digest-field-round" data-i18n-placeholder="digest.keyword_placeholder" placeholder="留空则取列表中最新的邮件" />
                                 </div>
                                 <div class="input-group">
-                                    <label for="digestInstruction">总结指令</label>
+                                    <label for="digestInstruction" data-i18n="digest.instruction_label">总结指令</label>
                                     <div class="prompt-presets" id="digestPromptPresets"></div>
-                                    <textarea id="digestInstruction" class="digest-field-round" rows="3" placeholder="告诉 AI 如何写摘要"></textarea>
+                                    <textarea id="digestInstruction" class="digest-field-round" rows="3" data-i18n-placeholder="digest.instruction_placeholder" placeholder="告诉 AI 如何写摘要"></textarea>
                                 </div>
-                                <p class="input-hint">定时摘要始终使用「日常」拉取，与主区域「高级：深度扫描」独立。</p>
+                                <p class="input-hint" data-i18n="digest.note">定时摘要始终使用「日常」拉取，与主区域「高级：深度扫描」独立。</p>
                                 <div class="input-group">
-                                    <label for="digestEmailCount">邮件条数上限</label>
+                                    <label for="digestEmailCount" data-i18n="digest.email_count_label">邮件条数上限</label>
                                     <input type="number" id="digestEmailCount" class="digest-field-round" min="1" max="10" step="1" value="10" />
                                 </div>
                                 <div class="digest-next-run" id="digestNextRunBlock" hidden>
-                                    <span class="label">下次大约触发</span>
+                                    <span class="label" data-i18n="digest.next_run_label">下次大约触发</span>
                                     <span id="digestNextRunText"></span>
                                 </div>
                                 <div class="command-actions digest-panel-actions">
-                                    <button type="button" class="btn-save btn-digest-save digest-btn-pill" id="digestSaveBtn" onclick="saveDigestSettings()">保存定时设置</button>
-                                    <button type="button" class="btn-secondary digest-btn-pill" onclick="refreshDigestPanel()">刷新</button>
+                                    <button type="button" class="btn-save btn-digest-save digest-btn-pill" id="digestSaveBtn" onclick="saveDigestSettings()" data-i18n="digest.btn_save">保存定时设置</button>
+                                    <button type="button" class="btn-secondary digest-btn-pill" onclick="refreshDigestPanel()" data-i18n="digest.btn_refresh">刷新</button>
                                 </div>
                                 <p class="input-hint" id="digestSaveError"></p>
                             </div>
                             <div class="digest-history-col">
-                                <div class="digest-history-head">历史摘要</div>
+                                <div class="digest-history-head" data-i18n="digest.history_head">历史摘要</div>
                                 <div id="digestHistoryList" class="digest-history-list" aria-live="polite"></div>
                             </div>
                         </div>
@@ -3606,11 +3667,11 @@
     <div id="tutorialModal" class="modal">
         <div class="modal-content">
             <button class="close" onclick="closeModal()">&times;</button>
-            <h2 class="modal-heading">使用指南</h2>
+            <h2 class="modal-heading" data-i18n="tutorial.heading">使用指南</h2>
 
             <div class="tutorial-section">
-                <h3>1. 配置 AI 服务</h3>
-                <p>点击顶部「设置」，填写 AI Base URL 和模型名称。API Key 为<strong>可选</strong>（留空将自动使用系统托管的 AI 服务）。保存后立即生效。</p>
+                <h3 data-i18n="tutorial.s1_title">1. 配置 AI 服务</h3>
+                <p data-i18n-html="tutorial.s1_body">点击顶部「设置」，填写 AI Base URL 和模型名称。API Key 为<strong>可选</strong>（留空将自动使用系统托管的 AI 服务）。保存后立即生效。</p>
                 <code class="code-block">"ai": {
   "base_url": "https://api.openai.com/v1",
   "api_key": "sk-... (可选)",
@@ -3619,37 +3680,37 @@
             </div>
 
             <div class="tutorial-section">
-                <h3>2. 连接邮箱</h3>
-                <p><strong>推荐：</strong>在「连接校园邮箱」区域点击「打开登录窗口」，在本机 Edge 中完成登录后回到此页点「我已登录」。</p>
-                <p><strong>高级：</strong>在 Chrome 或 Edge 安装 Cookie-Editor，登录邮箱后导出为 JSON，粘贴到「高级：粘贴 Cookie」文本框并保存。</p>
-                <p>如果会话失效，可重新走上述流程覆盖保存。</p>
+                <h3 data-i18n="tutorial.s2_title">2. 连接邮箱</h3>
+                <p data-i18n-html="tutorial.s2_p1"><strong>推荐：</strong>在「连接校园邮箱」区域点击「打开登录窗口」，在本机 Edge 中完成登录后回到此页点「我已登录」。</p>
+                <p data-i18n-html="tutorial.s2_p2"><strong>高级：</strong>在 Chrome 或 Edge 安装 Cookie-Editor，登录邮箱后导出为 JSON，粘贴到「高级：粘贴 Cookie」文本框并保存。</p>
+                <p data-i18n="tutorial.s2_p3">如果会话失效，可重新走上述流程覆盖保存。</p>
             </div>
 
             <div class="tutorial-section">
-                <h3>3. 使用方式</h3>
+                <h3 data-i18n="tutorial.s3_title">3. 使用方式</h3>
                 <ul>
-                    <li>关键词留空时，按列表读取最近若干封邮件。</li>
-                    <li>填写总结指令后，系统会搜索、提取正文并生成摘要。</li>
-                    <li>摘要结果与搜索历史保存在本机浏览器存储中（按账号区分）。</li>
-                    <li>需要扫描很多邮件时，展开「高级：深度扫描」按引导分两步操作。</li>
+                    <li data-i18n="tutorial.s3_li1">关键词留空时，按列表读取最近若干封邮件。</li>
+                    <li data-i18n="tutorial.s3_li2">填写总结指令后，系统会搜索、提取正文并生成摘要。</li>
+                    <li data-i18n="tutorial.s3_li3">摘要结果与搜索历史保存在本机浏览器存储中（按账号区分）。</li>
+                    <li data-i18n="tutorial.s3_li4">需要扫描很多邮件时，展开「高级：深度扫描」按引导分两步操作。</li>
                 </ul>
             </div>
 
             <div class="tutorial-section" id="tutorialDigestSection">
-                <h3>4. 定时摘要（每日 / 每周）</h3>
-                <p>定时摘要会在你设定的时间之后，<strong>自动</strong>按固定节奏排队执行一次「日常」拉取与摘要，无需每天手动点「生成邮件摘要」。</p>
-                <p>点击顶部「<strong>定时摘要</strong>」打开右侧面板进行设置；面板右上角「收起」可隐藏面板（已保存的任务仍有效）。</p>
+                <h3 data-i18n="tutorial.s4_title">4. 定时摘要（每日 / 每周）</h3>
+                <p data-i18n-html="tutorial.s4_p1">定时摘要会在你设定的时间之后，<strong>自动</strong>按固定节奏排队执行一次「日常」拉取与摘要，无需每天手动点「生成邮件摘要」。</p>
+                <p data-i18n-html="tutorial.s4_p2">点击顶部「<strong>定时摘要</strong>」打开右侧面板进行设置；面板右上角「收起」可隐藏面板（已保存的任务仍有效）。</p>
                 <ol>
-                    <li><strong>先连接邮箱</strong>：完成连接并点击「验证连接」或交互登录通过。若会话失效，定时任务会失败或跳过，需重新连接后再等下一周期。</li>
-                    <li><strong>配置 AI</strong>：与手动摘要相同，在「设置」中填写可用的模型接口（或使用托管服务）。</li>
-                    <li>按上文进入「定时摘要」面板后，<strong>打开「开启定时自动摘要」</strong>，选择「每日」或「每周」。选「每周」时，再选在一周中的哪一天触发。</li>
-                    <li><strong>设定时间</strong>：时间为<strong>服务器本地时钟</strong>（与页面提示一致）。到达该时刻<strong>之后</strong>，系统才会入队；实际执行可能再晚几秒到数分钟（后台排队、或与正在进行的分析串行）。</li>
-                    <li><strong>关键词（可选）</strong>：留空表示按邮箱列表顺序取<strong>最近若干封</strong>；填写则与手动分析相同，先按关键词搜索再取前 N 封。这里的「每日」指<strong>每个周期跑一次</strong>，不是严格的「过去 24 小时内每一封都包含」。</li>
-                    <li><strong>总结指令与条数上限</strong>：与手动摘要类似，可说明更关注活动、作业或通知等；条数上限受日常模式限制（页面会标注）。</li>
-                    <li>点击<strong>「保存定时设置」</strong>。保存成功后，若已开启功能，可看到<strong>「下次大约触发」</strong>的参考时间；也可随时点「刷新」更新历史列表。</li>
-                    <li><strong>历史摘要</strong>：右侧列表按时间倒序展示每次结果。点击一条可展开查看完整正文；状态为「成功」「失败」或「跳过」时，说明文字会写在记录里。</li>
+                    <li data-i18n-html="tutorial.s4_li1"><strong>先连接邮箱</strong>：完成连接并点击「验证连接」或交互登录通过。若会话失效，定时任务会失败或跳过，需重新连接后再等下一周期。</li>
+                    <li data-i18n-html="tutorial.s4_li2"><strong>配置 AI</strong>：与手动摘要相同，在「设置」中填写可用的模型接口（或使用托管服务）。</li>
+                    <li data-i18n-html="tutorial.s4_li3">按上文进入「定时摘要」面板后，<strong>打开「开启定时自动摘要」</strong>，选择「每日」或「每周」。选「每周」时，再选在一周中的哪一天触发。</li>
+                    <li data-i18n-html="tutorial.s4_li4"><strong>设定时间</strong>：时间为<strong>服务器本地时钟</strong>（与页面提示一致）。到达该时刻<strong>之后</strong>，系统才会入队；实际执行可能再晚几秒到数分钟（后台排队、或与正在进行的分析串行）。</li>
+                    <li data-i18n-html="tutorial.s4_li5"><strong>关键词（可选）</strong>：留空表示按邮箱列表顺序取<strong>最近若干封</strong>；填写则与手动分析相同，先按关键词搜索再取前 N 封。这里的「每日」指<strong>每个周期跑一次</strong>，不是严格的「过去 24 小时内每一封都包含」。</li>
+                    <li data-i18n-html="tutorial.s4_li6"><strong>总结指令与条数上限</strong>：与手动摘要类似，可说明更关注活动、作业或通知等；条数上限受日常模式限制（页面会标注）。</li>
+                    <li data-i18n-html="tutorial.s4_li7">点击<strong>「保存定时设置」</strong>。保存成功后，若已开启功能，可看到<strong>「下次大约触发」</strong>的参考时间；也可随时点「刷新」更新历史列表。</li>
+                    <li data-i18n-html="tutorial.s4_li8"><strong>历史摘要</strong>：右侧列表按时间倒序展示每次结果。点击一条可展开查看完整正文；状态为「成功」「失败」或「跳过」时，说明文字会写在记录里。</li>
                 </ol>
-                <p class="tutorial-note"><strong>请注意：</strong>定时摘要固定走「日常」拉取，与主区域「高级：深度扫描」相互独立。多人同时使用本服务时，任务会<strong>串行</strong>执行，可能排队。若某一周期已因失败或跳过结束，该周期内通常<strong>不会</strong>再次自动重试，需等到下一个日/周周期。</p>
+                <p class="tutorial-note" data-i18n-html="tutorial.s4_note"><strong>请注意：</strong>定时摘要固定走「日常」拉取，与主区域「高级：深度扫描」相互独立。多人同时使用本服务时，任务会<strong>串行</strong>执行，可能排队。若某一周期已因失败或跳过结束，该周期内通常<strong>不会</strong>再次自动重试，需等到下一个日/周周期。</p>
             </div>
         </div>
     </div>
@@ -3657,77 +3718,77 @@
     <div id="heroEditModal" class="modal">
         <div class="modal-content modal-content-md">
             <button class="close" onclick="closeHeroEditModal()">&times;</button>
-            <h2 class="modal-heading">自定义主标语</h2>
-            <p class="modal-description">
+            <h2 class="modal-heading" data-i18n="hero_edit.heading">自定义主标语</h2>
+            <p class="modal-description" data-i18n="hero_edit.description">
                 在下面输入整句标语，可选填要高亮的一段并选颜色；无需懂代码。也可展开「高级」使用 Markdown/HTML。内容仅保存在本机浏览器。
             </p>
             <div class="settings-form">
                 <label class="hero-use-advanced" for="heroUseAdvanced">
                     <input type="checkbox" id="heroUseAdvanced" />
-                    <span>使用高级自定义（Markdown / HTML）替代上面的简易排版</span>
+                    <span data-i18n="hero_edit.use_advanced">使用高级自定义（Markdown / HTML）替代上面的简易排版</span>
                 </label>
 
                 <div id="heroSimpleBlock" class="hero-simple-fields">
                     <div class="input-group">
-                        <label for="heroSimpleText">标语文字</label>
-                        <input type="text" id="heroSimpleText" placeholder="例如：狗修金sama，快来处理邮件吧" autocomplete="off" />
+                        <label for="heroSimpleText" data-i18n="hero_edit.text_label">标语文字</label>
+                        <input type="text" id="heroSimpleText" data-i18n-placeholder="hero_edit.text_placeholder" placeholder="例如：狗修金sama，快来处理邮件吧" autocomplete="off" />
                     </div>
                     <div class="input-group">
-                        <label for="heroSimpleHighlight">要高亮的文字（可选）</label>
-                        <input type="text" id="heroSimpleHighlight" placeholder="在上一句里完整出现的一段，例如：快来处理" autocomplete="off" />
+                        <label for="heroSimpleHighlight" data-i18n="hero_edit.highlight_label">要高亮的文字（可选）</label>
+                        <input type="text" id="heroSimpleHighlight" data-i18n-placeholder="hero_edit.highlight_placeholder" placeholder="在上一句里完整出现的一段，例如：快来处理" autocomplete="off" />
                     </div>
                     <div class="input-group">
-                        <label for="heroSimpleSize">字号</label>
+                        <label for="heroSimpleSize" data-i18n="hero_edit.size_label">字号</label>
                         <select id="heroSimpleSize">
-                            <option value="sm">较小</option>
-                            <option value="md" selected>标准</option>
-                            <option value="lg">较大</option>
+                            <option value="sm" data-i18n="hero_edit.size_sm">较小</option>
+                            <option value="md" selected data-i18n="hero_edit.size_md">标准</option>
+                            <option value="lg" data-i18n="hero_edit.size_lg">较大</option>
                         </select>
                     </div>
                     <div class="input-group">
-                        <span class="label-like">高亮颜色</span>
+                        <span class="label-like" data-i18n="hero_edit.color_label">高亮颜色</span>
                         <div class="hero-color-row">
                             <div class="hero-color-presets" id="heroColorPresets">
-                                <button type="button" class="hero-preset-btn" data-accent="var(--accent)" data-fallback-hex="#0f8f66">主题绿</button>
-                                <button type="button" class="hero-preset-btn" data-accent="#e91e63" data-fallback-hex="#e91e63">粉</button>
-                                <button type="button" class="hero-preset-btn" data-accent="#ff9800" data-fallback-hex="#ff9800">橙</button>
-                                <button type="button" class="hero-preset-btn" data-accent="#2196f3" data-fallback-hex="#2196f3">蓝</button>
+                                <button type="button" class="hero-preset-btn" data-accent="var(--accent)" data-fallback-hex="#0f8f66" data-i18n="hero_edit.color_green">主题绿</button>
+                                <button type="button" class="hero-preset-btn" data-accent="#e91e63" data-fallback-hex="#e91e63" data-i18n="hero_edit.color_pink">粉</button>
+                                <button type="button" class="hero-preset-btn" data-accent="#ff9800" data-fallback-hex="#ff9800" data-i18n="hero_edit.color_orange">橙</button>
+                                <button type="button" class="hero-preset-btn" data-accent="#2196f3" data-fallback-hex="#2196f3" data-i18n="hero_edit.color_blue">蓝</button>
                             </div>
                             <div class="hero-color-picker-wrap">
-                                <span>自定义</span>
-                                <input type="color" id="heroAccentHexPicker" value="#0f8f66" title="自定义颜色（十六进制）" />
+                                <span data-i18n="hero_edit.color_custom">自定义</span>
+                                <input type="color" id="heroAccentHexPicker" value="#0f8f66" data-i18n-title="hero_edit.color_picker_title" title="自定义颜色（十六进制）" />
                             </div>
                         </div>
                         <input type="hidden" id="heroAccentCss" value="var(--accent)" />
                     </div>
                     <div class="hero-edit-preview-wrap">
-                        <div class="hero-edit-preview-label">预览</div>
+                        <div class="hero-edit-preview-label" data-i18n="hero_edit.preview_label">预览</div>
                         <div id="heroEditPreview" class="hero-edit-preview-title hero-size-md" aria-hidden="true"></div>
                     </div>
                 </div>
 
                 <details class="advanced-settings hero-advanced-details" id="heroAdvancedDetails">
-                    <summary>高级自定义（Markdown / HTML）</summary>
+                    <summary data-i18n="hero_edit.advanced_summary">高级自定义（Markdown / HTML）</summary>
                     <div class="input-group advanced-format-group">
-                        <label for="heroAdvancedFormat">格式</label>
+                        <label for="heroAdvancedFormat" data-i18n="hero_edit.format_label">格式</label>
                         <select id="heroAdvancedFormat">
-                            <option value="plain">纯文本（换行保留）</option>
+                            <option value="plain" data-i18n="hero_edit.format_plain">纯文本（换行保留）</option>
                             <option value="markdown">Markdown</option>
                             <option value="html">HTML</option>
                         </select>
                     </div>
                     <div class="input-group">
-                        <label for="heroEditContent">内容</label>
-                        <textarea id="heroEditContent" rows="6" placeholder="高级模式下的内容…"></textarea>
+                        <label for="heroEditContent" data-i18n="hero_edit.content_label">内容</label>
+                        <textarea id="heroEditContent" rows="6" data-i18n-placeholder="hero_edit.content_placeholder" placeholder="高级模式下的内容…"></textarea>
                     </div>
-                    <p class="field-note">HTML 会移除 script/iframe 等危险标签；仍可使用安全内联 style。主题色：<code>var(--accent)</code>。</p>
+                    <p class="field-note" data-i18n-html="hero_edit.advanced_note">HTML 会移除 script/iframe 等危险标签；仍可使用安全内联 style。主题色：<code>var(--accent)</code>。</p>
                 </details>
 
                 <div class="modal-footer modal-footer-spaced">
-                    <button type="button" class="btn-secondary" onclick="resetHeroTitle()">恢复默认</button>
+                    <button type="button" class="btn-secondary" onclick="resetHeroTitle()" data-i18n="hero_edit.btn_reset">恢复默认</button>
                     <div class="flex-gap-10">
-                        <button type="button" class="btn-secondary" onclick="closeHeroEditModal()">取消</button>
-                        <button type="button" class="btn-save" onclick="saveHeroTitle()">保存</button>
+                        <button type="button" class="btn-secondary" onclick="closeHeroEditModal()" data-i18n="hero_edit.btn_cancel">取消</button>
+                        <button type="button" class="btn-save" onclick="saveHeroTitle()" data-i18n="hero_edit.btn_save">保存</button>
                     </div>
                 </div>
             </div>
@@ -3737,14 +3798,14 @@
     <div id="settingsModal" class="modal">
         <div class="modal-content modal-content-md">
             <button class="close" onclick="closeSettingsModal()">&times;</button>
-            <h2 class="modal-heading">设置</h2>
+            <h2 class="modal-heading" data-i18n="settings.heading">设置</h2>
 
             <div class="settings-form">
                 <div class="input-group">
-                    <label for="usernameInput">显示用户名</label>
+                    <label for="usernameInput" data-i18n="settings.username_label">显示用户名</label>
                     <div class="username-edit-row">
-                        <input type="text" id="usernameInput" placeholder="输入新的用户名" class="username-edit-input">
-                        <button type="button" class="btn-save username-edit-btn" onclick="updateUsername()">修改</button>
+                        <input type="text" id="usernameInput" data-i18n-placeholder="settings.username_placeholder" placeholder="输入新的用户名" class="username-edit-input">
+                        <button type="button" class="btn-save username-edit-btn" onclick="updateUsername()" data-i18n="settings.username_btn">修改</button>
                     </div>
                 </div>
 
@@ -3754,12 +3815,12 @@
                 </div>
 
                 <div class="input-group">
-                    <label for="aiApiKey">AI API Key <span class="optional-label">(可选)</span></label>
+                    <label for="aiApiKey">AI API Key <span class="optional-label" data-i18n="settings.api_key_optional">(可选)</span></label>
                     <div class="password-wrapper">
-                        <input type="password" id="aiApiKey" placeholder="留空将自动使用系统托管服务">
-                        <button class="password-toggle" type="button" onclick="toggleApiKeyVisibility()" title="显示或隐藏">SHOW</button>
+                        <input type="password" id="aiApiKey" data-i18n-placeholder="settings.api_key_placeholder" placeholder="留空将自动使用系统托管服务">
+                        <button class="password-toggle" type="button" onclick="toggleApiKeyVisibility()" data-i18n-title="settings.api_key_toggle_title" title="显示或隐藏">SHOW</button>
                     </div>
-                    <div class="field-note field-note-spaced">如不填写，系统将默认使用全局配置的 DeepSeek 接口。</div>
+                    <div class="field-note field-note-spaced" data-i18n="settings.api_key_note">如不填写，系统将默认使用全局配置的 DeepSeek 接口。</div>
                 </div>
 
                 <div class="input-group">
@@ -3769,8 +3830,8 @@
 
                 <div class="prelaunch-row">
                     <div class="prelaunch-info">
-                        <span class="prelaunch-label">启动时自动连接浏览器</span>
-                        <span class="prelaunch-hint">开启后，应用启动时会自动打开浏览器并登录邮箱，减少首次查询等待。</span>
+                        <span class="prelaunch-label" data-i18n="settings.prelaunch_label">启动时自动连接浏览器</span>
+                        <span class="prelaunch-hint" data-i18n="settings.prelaunch_hint">开启后，应用启动时会自动打开浏览器并登录邮箱，减少首次查询等待。</span>
                     </div>
                     <label class="toggle-switch" for="prelaunchToggle">
                         <input type="checkbox" id="prelaunchToggle" onchange="togglePrelaunch()">
@@ -3779,33 +3840,33 @@
                 </div>
 
                 <details class="advanced-settings">
-                    <summary>高级设置</summary>
+                    <summary data-i18n="settings.advanced_summary">高级设置</summary>
                     <div class="input-group">
-                        <label for="emailUrl">邮箱 URL</label>
+                        <label for="emailUrl" data-i18n="settings.email_url_label">邮箱 URL</label>
                         <input type="text" id="emailUrl" placeholder="https://mail.xjtlu.edu.cn/owa">
                     </div>
                 </details>
 
                 <details class="advanced-settings dev-settings-details">
-                    <summary>开发者工具（维护用，普通用户请忽略）</summary>
-                    <p class="dev-extract-hint">用于验证列表与正文提取；使用主界面「搜索关键词」与当前会话。测试 1 会将结果写入 <code>src/</code> 下 JSON。</p>
+                    <summary data-i18n="settings.dev_summary">开发者工具（维护用，普通用户请忽略）</summary>
+                    <p class="dev-extract-hint" data-i18n-html="settings.dev_hint">用于验证列表与正文提取；使用主界面「搜索关键词」与当前会话。测试 1 会将结果写入 <code>src/</code> 下 JSON。</p>
                     <div class="dev-extract-block dev-extract-in-modal">
-                        <button type="button" class="btn-secondary" id="devExtractBodiesBtn" onclick="devExtractSampleBodies()">
+                        <button type="button" class="btn-secondary" id="devExtractBodiesBtn" onclick="devExtractSampleBodies()" data-i18n="settings.dev_test1">
                             测试 1：提取全量（最多 100 封）正文（不调 LLM）
                         </button>
-                        <p class="dev-extract-hint">深度拉列表（最多 100 封）时先滚回列表顶部再小步增量收集；顺序与收件箱一致、不按日期重排，并对 data-convid 去重；提取前按 convid 重新定位行。</p>
+                        <p class="dev-extract-hint" data-i18n-html="settings.dev_test1_hint">深度拉列表（最多 100 封）时先滚回列表顶部再小步增量收集；顺序与收件箱一致、不按日期重排，并对 data-convid 去重；提取前按 convid 重新定位行。</p>
                         <pre id="devExtractBodiesPre" class="dev-extract-pre" aria-live="polite"></pre>
-                        <button type="button" class="btn-secondary" id="devExtractDailyBtn" onclick="devExtractDailyBodiesNoLlm()">
+                        <button type="button" class="btn-secondary" id="devExtractDailyBtn" onclick="devExtractDailyBodiesNoLlm()" data-i18n="settings.dev_test2">
                             测试 2：日常流程提取正文（不调 LLM）
                         </button>
-                        <p class="dev-extract-hint">与主界面「日常模式」相同：<code>search_emails(mode=daily)</code> + 逐封 <code>extract_full_body</code>，最多 10 封；使用主界面「搜索关键词」与「处理邮件数量」（超过 10 按 10 计）。仅在下框展示正文，不写文件。</p>
+                        <p class="dev-extract-hint" data-i18n-html="settings.dev_test2_hint">与主界面「日常模式」相同：<code>search_emails(mode=daily)</code> + 逐封 <code>extract_full_body</code>，最多 10 封；使用主界面「搜索关键词」与「处理邮件数量」（超过 10 按 10 计）。仅在下框展示正文，不写文件。</p>
                         <pre id="devExtractDailyPre" class="dev-extract-pre" aria-live="polite"></pre>
                     </div>
                 </details>
 
                 <div class="modal-footer">
-                    <button class="btn-secondary" onclick="closeSettingsModal()">取消</button>
-                    <button class="btn-save" id="saveConfigBtn" onclick="saveConfig()">保存配置</button>
+                    <button class="btn-secondary" onclick="closeSettingsModal()" data-i18n="settings.btn_cancel">取消</button>
+                    <button class="btn-save" id="saveConfigBtn" onclick="saveConfig()" data-i18n="settings.btn_save">保存配置</button>
                 </div>
             </div>
         </div>
@@ -4253,13 +4314,13 @@
                 let importanceInner;
                 if (starN >= 1 && starN <= 5) {
                     importanceInner =
-                        '<span class="email-summary-stars" aria-label="重要程度 ' +
+                        '<span class="email-summary-stars" aria-label="' + i18n.t("js.summary_label_importance") + ' ' +
                         starN +
-                        ' 星">' +
+                        i18n.t("js.summary_star") + '">' +
                         "⭐".repeat(starN) +
                         "</span>";
                 } else {
-                    importanceInner = escapeHtml(it.starDigit + "星");
+                    importanceInner = escapeHtml(it.starDigit + i18n.t("js.summary_star"));
                 }
                 const posClass = i === 0 ? "is-current" : "is-right";
                 cards.push(
@@ -4269,27 +4330,27 @@
                         i +
                         '">' +
                         '<div class="email-summary-field">' +
-                        '<span class="email-summary-label">邮件标题</span>' +
+                        '<span class="email-summary-label">' + i18n.t("js.summary_label_title") + '</span>' +
                         '<div class="email-summary-value email-summary-subject">' +
                         escapeHtml(it.title) +
                         "</div></div>" +
                         '<div class="email-summary-field">' +
-                        '<span class="email-summary-label">发件人</span>' +
+                        '<span class="email-summary-label">' + i18n.t("js.summary_label_sender") + '</span>' +
                         '<div class="email-summary-value">' +
                         escapeHtml(it.sender) +
                         "</div></div>" +
                         '<div class="email-summary-field">' +
-                        '<span class="email-summary-label">发件日期</span>' +
+                        '<span class="email-summary-label">' + i18n.t("js.summary_label_sent_date") + '</span>' +
                         '<div class="email-summary-value">' +
                         escapeHtml(it.sentDate != null ? it.sentDate : "—") +
                         "</div></div>" +
                         '<div class="email-summary-field">' +
-                        '<span class="email-summary-label">内容总结</span>' +
+                        '<span class="email-summary-label">' + i18n.t("js.summary_label_summary") + '</span>' +
                         '<div class="email-summary-value">' +
                         escapeHtml(it.summary) +
                         "</div></div>" +
                         '<div class="email-summary-field">' +
-                        '<span class="email-summary-label">重要程度</span>' +
+                        '<span class="email-summary-label">' + i18n.t("js.summary_label_importance") + '</span>' +
                         '<div class="email-summary-value">' +
                         importanceInner +
                         "</div></div>" +
@@ -4300,15 +4361,15 @@
             const pagClass = n <= 1 ? "email-summary-pagination is-single" : "email-summary-pagination";
             const prevBtn =
                 n > 1
-                    ? '<button type="button" class="deck-arrow deck-prev" aria-label="上一封">◀</button>'
+                    ? '<button type="button" class="deck-arrow deck-prev" aria-label="' + i18n.t("js.summary_prev") + '">◀</button>'
                     : "";
             const nextBtn =
                 n > 1
-                    ? '<button type="button" class="deck-arrow deck-next" aria-label="下一封">▶</button>'
+                    ? '<button type="button" class="deck-arrow deck-next" aria-label="' + i18n.t("js.summary_next") + '">▶</button>'
                     : "";
             const deckHtml =
                 '<div class="email-summary-deck-outer">' +
-                '<div class="email-summary-deck" tabindex="0" role="group" aria-label="邮件摘要卡片，可用左右键翻页">' +
+                '<div class="email-summary-deck" tabindex="0" role="group" aria-label="' + i18n.t("js.summary_deck_aria") + '">' +
                 '<div class="email-summary-deck-shadows" aria-hidden="true">' +
                 (n > 1
                     ? '<div class="deck-shadow deck-shadow-1"></div><div class="deck-shadow deck-shadow-2"></div>'
@@ -4455,9 +4516,9 @@
             if (!runBtn) return;
             const lbl = runBtn.querySelector(".btn-label");
             if (mode === "deep") {
-                lbl.textContent = window.deepScanData ? "重新扫描邮件列表" : "开始深度扫描（最多 " + DEEP_MAX_EMAILS + " 封）";
+                lbl.textContent = window.deepScanData ? i18n.t("js.deep_rescan") : i18n.t("js.deep_start_scan", {n: DEEP_MAX_EMAILS});
             } else {
-                lbl.textContent = "生成邮件摘要";
+                lbl.textContent = i18n.t("command.btn_generate");
             }
         }
 
@@ -4474,12 +4535,12 @@
 
             if (mode === "deep") {
                 inputEl.max = DEEP_MAX_EMAILS;
-                hintEl.textContent = "深度模式请使用下方两步：先「深度扫描」拉列表，再筛选后「开始分析选中的邮件」（单次分析最多 " + DEEP_MAX_EMAILS + " 封）。";
+                hintEl.textContent = i18n.t("js.deep_hint_mode", {n: DEEP_MAX_EMAILS});
                 if (emailCountGroup) emailCountGroup.style.display = "none";
                 if (deepScanPanel) deepScanPanel.style.display = "block";
             } else {
                 inputEl.max = 10;
-                hintEl.textContent = "范围 1-10。LLM 会按每批 3 封并行处理，再做 1 次总汇总。";
+                hintEl.textContent = i18n.t("js.daily_hint_mode");
                 if (currentVal > 10) {
                     inputEl.value = 10;
                 }
@@ -4784,7 +4845,7 @@
             localStorage.removeItem(HERO_LEGACY_KEY);
             renderHeroTitle(payload);
             closeHeroEditModal();
-            showToast("主标语已保存");
+            showToast(i18n.t("js.toast_hero_saved"));
         }
 
         function resetHeroTitle() {
@@ -4808,7 +4869,7 @@
             if (content) content.value = d.advanced.content;
             setHeroSimpleBlockDisabled(false);
             updateHeroEditPreview();
-            showToast("已恢复默认标语");
+            showToast(i18n.t("js.toast_hero_reset"));
         }
 
         function wireHeroEditModal() {
@@ -4862,7 +4923,7 @@
             document.documentElement.setAttribute("data-theme", theme);
             const ti = document.getElementById("themeIcon");
             if (ti) ti.textContent = theme === "dark" ? "\u00b7" : "\u00b7";
-            document.getElementById("themeLabel").textContent = theme === "dark" ? "浅色模式" : "深色模式";
+            document.getElementById("themeLabel").textContent = theme === "dark" ? i18n.t("topbar.theme_light") : i18n.t("topbar.theme_dark");
             if (window.deepScanData && window.deepScanData.categories) {
                 renderDeepCategoryPieChart(
                     window.deepScanData.categories,
@@ -4905,7 +4966,7 @@
             if (chartEl) chartEl.style.display = "none";
             if (emptyEl) {
                 emptyEl.style.display = "none";
-                emptyEl.textContent = "暂无分类数据";
+                emptyEl.textContent = i18n.t("js.deep_no_category_data");
             }
         }
 
@@ -4924,7 +4985,7 @@
             if (typeof echarts === "undefined") {
                 chartEl.style.display = "none";
                 emptyEl.style.display = "block";
-                emptyEl.textContent = "图表库加载失败，请刷新页面重试";
+                emptyEl.textContent = i18n.t("js.deep_chart_fail");
                 return;
             }
 
@@ -4944,7 +5005,7 @@
             if (n === 0 || total === 0 || entries.length === 0) {
                 chartEl.style.display = "none";
                 emptyEl.style.display = "block";
-                emptyEl.textContent = "暂无分类数据";
+                emptyEl.textContent = i18n.t("js.deep_no_category_data");
                 return;
             }
 
@@ -4984,7 +5045,7 @@
                 },
                 series: [
                     {
-                        name: "分类",
+                        name: i18n.t("js.deep_pie_series"),
                         type: "pie",
                         radius: ["42%", "68%"],
                         center: ["50%", "44%"],
@@ -5052,7 +5113,7 @@
             container.innerHTML = `
                 <div class="welcome-banner ${cls}" id="startupCookieBanner">
                     <span>${safe}</span>
-                    <button type="button" class="banner-close" onclick="dismissStartupBanner()" aria-label="关闭">×</button>
+                    <button type="button" class="banner-close" onclick="dismissStartupBanner()" aria-label="${i18n.t("js.close_aria")}">×</button>
                 </div>`;
         }
 
@@ -5084,13 +5145,11 @@
                 wrap.classList.add("is-locked");
                 hint.removeAttribute("hidden");
                 if (interactiveLoginActive) {
-                    hint.textContent =
-                        "正在等待你在登录窗口中完成邮箱登录。完成后回到此页点击「我已登录」，或使用「取消」结束。";
+                    hint.textContent = i18n.t("js.banner_waiting_login");
                 } else if (currentCookieStatus !== "valid" && currentCookieStatus !== "warning") {
-                    hint.textContent =
-                        "请先在上方连接校园邮箱，完成「验证连接」或交互登录通过后再生成摘要。";
+                    hint.textContent = i18n.t("js.gate_connect_first");
                 } else {
-                    hint.textContent = "暂时无法操作摘要表单，请先完成上方邮箱连接步骤。";
+                    hint.textContent = i18n.t("js.gate_form_locked");
                 }
                 if (runBtn) runBtn.disabled = true;
             }
@@ -5150,7 +5209,7 @@
                 const msg = d.auto_cookie_message || "";
                 currentCookieStatus = st;
                 if (st === "skipped" || st === "suggest_check") {
-                    setCookiePill(st === "suggest_check" ? "建议验证" : "未自动检查", st === "suggest_check" ? "warn" : "");
+                    setCookiePill(st === "suggest_check" ? i18n.t("js.pill_suggest_check") : i18n.t("js.pill_no_auto_check"), st === "suggest_check" ? "warn" : "");
                     if (st === "suggest_check") {
                         renderStartupWelcomeBanner(msg, "info");
                         stopStartupCookiePoll();
@@ -5160,27 +5219,27 @@
                     return;
                 }
                 if (st === "valid") {
-                    setCookiePill("已连接", "ok");
-                    renderStartupWelcomeBanner(msg || "会话可用。", "info");
+                    setCookiePill(i18n.t("js.pill_connected"), "ok");
+                    renderStartupWelcomeBanner(msg || i18n.t("js.pill_session_ok"), "info");
                     return;
                 }
                 if (st === "invalid") {
-                    setCookiePill("需重新登录", "bad");
+                    setCookiePill(i18n.t("js.pill_relogin"), "bad");
                     renderStartupWelcomeBanner(msg, "bad");
                     return;
                 }
                 if (st === "warning") {
-                    setCookiePill("已连接（注意）", "warn");
+                    setCookiePill(i18n.t("js.pill_connected_note"), "warn");
                     renderStartupWelcomeBanner(msg, "warn");
                     return;
                 }
                 if (st === "error") {
-                    setCookiePill("检查失败", "bad");
+                    setCookiePill(i18n.t("js.pill_check_fail"), "bad");
                     renderStartupWelcomeBanner(msg, "bad");
                     return;
                 }
                 if (st === "pending" || st === "checking") {
-                    setCookiePill(st === "checking" ? "验证中…" : "等待验证…", "warn");
+                    setCookiePill(st === "checking" ? i18n.t("js.pill_checking") : i18n.t("js.pill_waiting"), "warn");
                     renderStartupWelcomeBanner("", "none");
                 }
             } finally {
@@ -5258,7 +5317,7 @@
                 document.getElementById("usernameInput").value = userPillSplit[0].trim();
             }
             const btn = document.getElementById("saveConfigBtn");
-            btn.textContent = "加载中...";
+            btn.textContent = i18n.t("js.config_loading");
             btn.disabled = true;
             try {
                 const res = await fetch("/api/config");
@@ -5269,9 +5328,9 @@
                 document.getElementById("emailUrl").value = conf.email_url || "https://mail.xjtlu.edu.cn/owa";
                 document.getElementById("emailCookies").value = conf.email_cookies || "";
             } catch (e) {
-                showToast("无法加载配置: " + e.message);
+                showToast(i18n.t("js.config_load_fail") + e.message);
             } finally {
-                btn.textContent = "保存配置";
+                btn.textContent = i18n.t("js.config_save_btn");
                 btn.disabled = false;
             }
             // 加载预启动开关状态
@@ -5287,7 +5346,7 @@
         async function updateUsername() {
             const newName = document.getElementById("usernameInput").value.trim();
             if (!newName) {
-                showToast("用户名不能为空");
+                showToast(i18n.t("js.username_empty"));
                 return;
             }
             try {
@@ -5298,7 +5357,7 @@
                 });
                 const data = await res.json();
                 if (data.status === "success" || data.status === "ok") {
-                    showToast("用户名已更新");
+                    showToast(i18n.t("js.username_updated"));
                     const userPill = document.getElementById("userPillText");
                     if (userPill) {
                         const parts = userPill.textContent.split("·");
@@ -5309,10 +5368,10 @@
                         }
                     }
                 } else {
-                    showToast("更新失败: " + data.message);
+                    showToast(i18n.t("js.username_update_fail") + data.message);
                 }
             } catch (e) {
-                showToast("请求错误: " + e.message);
+                showToast(i18n.t("js.request_error") + e.message);
             }
         }
 
@@ -5329,11 +5388,11 @@
                 if (data.status === "success") {
                     showToast(data.message);
                 } else {
-                    showToast("设置失败: " + (data.message || "未知错误"));
+                    showToast(i18n.t("js.prelaunch_error") + (data.message || ""));
                     toggle.checked = !enabled;
                 }
             } catch (e) {
-                showToast("请求失败: " + e.message);
+                showToast(i18n.t("js.request_fail") + e.message);
                 toggle.checked = !enabled;
             }
         }
@@ -5356,7 +5415,7 @@
 
         async function saveConfig() {
             const btn = document.getElementById("saveConfigBtn");
-            btn.textContent = "保存中...";
+            btn.textContent = i18n.t("js.config_saving");
             btn.disabled = true;
 
             const payload = {
@@ -5375,15 +5434,15 @@
                 });
                 const data = await res.json();
                 if (data.status === "success") {
-                    showToast("配置已保存");
+                    showToast(i18n.t("js.config_saved"));
                     closeSettingsModal();
                 } else {
-                    showToast("保存失败: " + data.message);
+                    showToast(i18n.t("js.config_save_fail") + data.message);
                 }
             } catch (e) {
-                showToast("发生错误: " + e.message);
+                showToast(i18n.t("js.error_occurred") + e.message);
             } finally {
-                btn.textContent = "保存配置";
+                btn.textContent = i18n.t("js.config_save_btn");
                 btn.disabled = false;
             }
         }
@@ -5399,15 +5458,15 @@
             const pill = document.getElementById("cookiePill");
             if (pill) {
                 pill.className = "cookie-pill bad";
-                pill.textContent = "未载入";
+                pill.textContent = i18n.t("js.cookie_not_loaded");
             }
-            showToast("Cookie 内容已清空");
+            showToast(i18n.t("js.cookie_cleared"));
         }
 
         async function saveCookieOnly() {
             const cookieText = normalizeCookieTextareaValue(false);
             if (cookieText == null) {
-                showToast("Cookie 格式无法识别，请粘贴 Cookie-Editor JSON 或 Netscape 文本");
+                showToast(i18n.t("js.cookie_format_error"));
                 return;
             }
             try {
@@ -5428,13 +5487,13 @@
                 });
                 const data = await saveRes.json();
                 if (data.status === "success") {
-                    showToast("Cookie 已保存");
+                    showToast(i18n.t("js.cookie_saved"));
                 } else {
                     const msg = data.message || formatFastApiErrorDetail(data.detail) || ("HTTP " + saveRes.status);
-                    showToast("保存失败: " + msg);
+                    showToast(i18n.t("js.cookie_save_fail") + msg);
                 }
             } catch (e) {
-                showToast("保存 Cookie 失败: " + e.message);
+                showToast(i18n.t("js.cookie_save_error") + e.message);
             }
         }
 
@@ -5442,7 +5501,7 @@
             const btn = document.getElementById("interactiveMailStartBtn");
             if (btn) {
                 btn.disabled = true;
-                btn.textContent = "正在打开…";
+                btn.textContent = i18n.t("js.login_opening");
             }
             try {
                 const res = await fetch("/api/mail/interactive_login/start", { method: "POST" });
@@ -5450,8 +5509,8 @@
                 if (res.ok && data.status === "success") {
                     interactiveLoginActive = true;
                     refreshCommandPanelGate();
-                    showToast(data.message || "请在打开的窗口中登录邮箱");
-                    setCookiePill("等待登录", "warn");
+                    showToast(data.message || i18n.t("cookie.btn_open_login"));
+                    setCookiePill(i18n.t("js.login_wait"), "warn");
                 } else {
                     interactiveLoginActive = false;
                     refreshCommandPanelGate();
@@ -5461,11 +5520,11 @@
             } catch (e) {
                 interactiveLoginActive = false;
                 refreshCommandPanelGate();
-                showToast("请求失败: " + e.message);
+                showToast(i18n.t("js.request_fail") + e.message);
             } finally {
                 if (btn) {
                     btn.disabled = false;
-                    btn.textContent = "打开登录窗口";
+                    btn.textContent = i18n.t("cookie.btn_open_login");
                 }
             }
         }
@@ -5474,15 +5533,15 @@
             const btn = document.getElementById("interactiveMailDoneBtn");
             if (btn) {
                 btn.disabled = true;
-                btn.textContent = "保存中…";
+                btn.textContent = i18n.t("js.login_saving");
             }
             try {
                 const res = await fetch("/api/mail/interactive_login/complete", { method: "POST" });
                 const data = await res.json().catch(() => ({}));
                 if (res.ok && data.status === "success") {
                     currentCookieStatus = data.warning ? "warning" : "valid";
-                    showToast(data.message || "已保存邮箱会话");
-                    setCookiePill(data.warning ? "已保存（见提示）" : "已保存会话", data.warning ? "warn" : "ok");
+                    showToast(data.message || i18n.t("js.login_saved"));
+                    setCookiePill(data.warning ? i18n.t("js.login_saved_warn") : i18n.t("js.login_session_saved"), data.warning ? "warn" : "ok");
                     try {
                         const confRes = await fetch("/api/config");
                         const conf = await confRes.json();
@@ -5494,13 +5553,13 @@
                     showToast(msg);
                 }
             } catch (e) {
-                showToast("请求失败: " + e.message);
+                showToast(i18n.t("js.request_fail") + e.message);
             } finally {
                 interactiveLoginActive = false;
                 refreshCommandPanelGate();
                 if (btn) {
                     btn.disabled = false;
-                    btn.textContent = "我已登录";
+                    btn.textContent = i18n.t("cookie.btn_logged_in");
                 }
             }
         }
@@ -5509,12 +5568,12 @@
             try {
                 const res = await fetch("/api/mail/interactive_login/cancel", { method: "POST" });
                 const data = await res.json().catch(() => ({}));
-                showToast(data.message || "已取消");
-                if (res.ok) setCookiePill("待验证", "");
+                showToast(data.message || i18n.t("js.login_cancelled"));
+                if (res.ok) setCookiePill(i18n.t("cookie.pill_unverified"), "");
                 interactiveLoginActive = false;
                 refreshCommandPanelGate();
             } catch (e) {
-                showToast("取消失败: " + e.message);
+                showToast(i18n.t("js.cancel_fail") + e.message);
             }
         }
 
@@ -5625,7 +5684,8 @@
 
         function normalizeKeywordForMatch(k) {
             const s = String(k ?? "").trim();
-            return s === "" ? "(最新邮件)" : s;
+            if (s === "" || s === "(最新邮件)" || s === "(Latest emails)") return i18n.t("js.history_latest_keyword");
+            return s;
         }
 
         function saveToHistory(keyword, instruction, emailCount, queryId) {
@@ -5648,12 +5708,12 @@
             const container = document.getElementById("historyList");
             const history = loadHistory();
             if (history.length === 0) {
-                container.innerHTML = '<span class="history-empty">暂无搜索记录</span>';
+                container.innerHTML = '<span class="history-empty">' + i18n.t("js.history_empty") + '</span>';
                 return;
             }
             container.innerHTML = history.map((h, i) =>
-                `<div class="history-chip" onclick="handleHistoryChipClick(event, ${i})" title="单击：定位到摘要结果；Shift+单击：填入表单">
-                    <span class="chip-keyword">${escapeHtml(h.keyword || "最新")}</span>
+                `<div class="history-chip" onclick="handleHistoryChipClick(event, ${i})" title="${i18n.t("js.history_chip_title")}">
+                    <span class="chip-keyword">${escapeHtml(h.keyword || i18n.t("js.history_latest"))}</span>
                     <span class="chip-time">${escapeHtml(h.time || "")}</span>
                 </div>`
             ).join("");
@@ -5673,7 +5733,7 @@
             if (history[index]) {
                 const h = history[index];
                 document.getElementById("keyword").value =
-                    h.keyword === "(最新邮件)" ? "" : h.keyword || "";
+                    (h.keyword === "(最新邮件)" || h.keyword === i18n.t("js.history_latest_keyword")) ? "" : h.keyword || "";
                 document.getElementById("instruction").value = h.instruction || "";
                 if (typeof updatePresetActiveState === 'function') {
                     updatePresetActiveState("mainPromptPresets", "instruction");
@@ -5718,7 +5778,7 @@
             if (!h) return;
             const el = findResultEntryForHistoryItem(h);
             if (!el) {
-                showToast("找不到对应的摘要记录，可能已被清空");
+                showToast(i18n.t("js.history_not_found"));
                 return;
             }
             const resultsHistory = document.getElementById("resultsHistory");
@@ -5838,11 +5898,11 @@
                 const label = btnEl.querySelector(".copy-label");
                 btnEl.classList.add("copied");
                 icon.textContent = "OK";
-                label.textContent = "已复制";
+                label.textContent = i18n.t("js.copied");
                 setTimeout(() => {
                     btnEl.classList.remove("copied");
                     icon.textContent = "CP";
-                    label.textContent = "复制";
+                    label.textContent = i18n.t("js.copy");
                 }, 2000);
             });
         }
@@ -5874,7 +5934,7 @@
             const emailListId = "email-list-" + resultCounter;
             const toggleId = "email-toggle-" + resultCounter;
 
-            const safeKeyword = escapeHtml(record.keyword || "最新邮件");
+            const safeKeyword = escapeHtml(record.keyword || i18n.t("js.result_latest_mail"));
             const safeTime = escapeHtml(record.time || "");
             const safeInstruction = escapeHtml(record.instruction || "");
             const emailCount = (record.emails && record.emails.length) || 0;
@@ -5890,7 +5950,7 @@
             bodyHTML += `<div class="result-entry-toggle-text">`;
             bodyHTML += `<span class="result-meta-tag">${safeKeyword}</span>`;
             bodyHTML += `<span class="result-meta-time">${safeTime}</span>`;
-            bodyHTML += `<span class="result-entry-toggle-hint">点击折叠 / 展开</span>`;
+            bodyHTML += `<span class="result-entry-toggle-hint">${i18n.t("js.result_toggle_hint")}</span>`;
             bodyHTML += `</div>`;
             bodyHTML += `<span class="toggle-arrow result-entry-chevron" aria-hidden="true">▼</span>`;
             bodyHTML += `</div>`;
@@ -5907,13 +5967,13 @@
             bodyHTML += `<div class="result-body">`;
             bodyHTML += `<div class="result-summary-section">`;
             bodyHTML += `<div class="section-line">`;
-            bodyHTML += `<div class="card-title">智能总结</div>`;
+            bodyHTML += `<div class="card-title">${i18n.t("js.result_summary_title")}</div>`;
             bodyHTML += `<div style="display:flex;align-items:center;gap:6px;">`;
-            bodyHTML += `<button type="button" class="summary-view-toggle" id="${viewToggleId}" onclick="toggleSummaryView('${summaryId}','${rawTextId}','${viewToggleId}')" title="切换卡片视图 / 原文视图">`;
-            bodyHTML += `<span>📄 原文</span>`;
+            bodyHTML += `<button type="button" class="summary-view-toggle" id="${viewToggleId}" onclick="toggleSummaryView('${summaryId}','${rawTextId}','${viewToggleId}')">`;
+            bodyHTML += `<span>${i18n.t("js.result_raw_text")}</span>`;
             bodyHTML += `</button>`;
             bodyHTML += `<button class="btn-copy" onclick="copySummaryEntry(this, document.getElementById('${summaryId}')._rawText)">`;
-            bodyHTML += `<span class="copy-icon">CP</span> <span class="copy-label">复制</span>`;
+            bodyHTML += `<span class="copy-icon">CP</span> <span class="copy-label">${i18n.t("js.copy")}</span>`;
             bodyHTML += `</button>`;
             bodyHTML += `</div>`;
             bodyHTML += `</div>`;
@@ -5923,9 +5983,9 @@
 
             bodyHTML += `<div class="result-email-section">`;
             bodyHTML += `<div class="section-line email-toggle collapsed" id="${toggleId}" onclick="toggleEmailList('${emailListId}', '${toggleId}')">`;
-            bodyHTML += `<div class="card-title">邮件列表</div>`;
+            bodyHTML += `<div class="card-title">${i18n.t("js.result_mail_list")}</div>`;
             bodyHTML += `<div style="display:flex; align-items:center; gap:10px;">`;
-            bodyHTML += `<span class="status-badge">${emailCount} 封</span>`;
+            bodyHTML += `<span class="status-badge">${emailCount}${i18n.t("js.result_mail_count")}</span>`;
             bodyHTML += `<span class="toggle-arrow">▼</span>`;
             bodyHTML += `</div>`;
             bodyHTML += `</div>`;
@@ -5942,7 +6002,7 @@
                     bodyHTML += `</div>`;
                 });
             } else {
-                bodyHTML += `<div class="empty-box">未找到相关邮件</div>`;
+                bodyHTML += `<div class="empty-box">${i18n.t("js.result_no_mail")}</div>`;
             }
             bodyHTML += `</div></div></div></div></div></div>`;
 
@@ -5974,7 +6034,7 @@
             if (structuredHTML) {
                 parsedHTML = structuredHTML;
             } else {
-                parsedHTML = record.summary ? marked.parse(record.summary) : "<p>没有生成总结内容。</p>";
+                parsedHTML = record.summary ? marked.parse(record.summary) : "<p>" + i18n.t("js.result_no_summary") + "</p>";
             }
 
             if (useTypewriter && !useStructured) {
@@ -6002,13 +6062,13 @@
                 rawTextEl.classList.remove("is-visible");
                 summaryEl.style.display = "";
                 toggleBtn.classList.remove("is-active");
-                toggleBtn.innerHTML = "<span>📄 原文</span>";
+                toggleBtn.innerHTML = "<span>" + i18n.t("js.result_raw_text") + "</span>";
             } else {
                 /* 切到原文视图 */
                 rawTextEl.classList.add("is-visible");
                 summaryEl.style.display = "none";
                 toggleBtn.classList.add("is-active");
-                toggleBtn.innerHTML = "<span>🃏 卡片</span>";
+                toggleBtn.innerHTML = "<span>" + i18n.t("js.result_card_view") + "</span>";
             }
         }
 
@@ -6031,7 +6091,7 @@
                 const t = entry.querySelector(".result-entry-toggle");
                 if (t) t.setAttribute("aria-expanded", "false");
             });
-            showToast("已折叠全部结果");
+            showToast(i18n.t("js.results_collapsed"));
         }
 
         function toggleEmailList(listId, toggleId) {
@@ -6066,7 +6126,7 @@
 
         async function runTask() {
             if (currentCookieStatus !== "valid" && currentCookieStatus !== "warning") {
-                showToast("请先在上方连接校园邮箱并验证通过后，再生成摘要。");
+                showToast(i18n.t("js.gate_hint_please_connect"));
                 return;
             }
 
@@ -6080,9 +6140,9 @@
 
             runBtn.disabled = true;
             runBtn.classList.add("loading");
-            runBtn.querySelector(".btn-label").textContent = "处理中...";
+            runBtn.querySelector(".btn-label").textContent = i18n.t("js.processing");
             showProgress();
-            setProgressStage("connecting", "正在连接邮箱服务器...");
+            setProgressStage("connecting", i18n.t("js.connecting_server"));
             startStatusPolling();
 
             try {
@@ -6096,17 +6156,17 @@
                 stopStatusPolling();
 
                 if (response.status === 409) {
-                    setProgressStage("connecting", data.message || "请先完成邮箱连接");
+                    setProgressStage("connecting", data.message || i18n.t("js.connect_first"));
                     document.getElementById("progressDetail").style.animation = "none";
-                    showToast(data.message || "正在连接邮箱，请先完成或取消后再试");
+                    showToast(data.message || i18n.t("js.connecting_mail"));
                     return;
                 }
 
                 if (data.status === "cookie_expired") {
                     setProgressStage("searching", "");
-                    document.getElementById("progressDetail").textContent = "Cookie 已过期";
+                    document.getElementById("progressDetail").textContent = i18n.t("js.cookie_expired_progress");
                     document.getElementById("progressDetail").style.animation = "none";
-                    showToast("Cookie 已过期，请在配置中更新");
+                    showToast(i18n.t("js.cookie_expired_update"));
                 } else if (data.status === "success") {
                     STAGES.forEach((s) => {
                         const el = document.getElementById("step-" + s);
@@ -6114,11 +6174,11 @@
                         el.classList.add("completed");
                     });
                     document.getElementById("progressBarFill").style.width = "100%";
-                    document.getElementById("progressDetail").textContent = "分析完成";
+                    document.getElementById("progressDetail").textContent = i18n.t("js.analysis_complete");
                     document.getElementById("progressDetail").style.animation = "none";
 
                     const queryId = generateQueryId();
-                    saveToHistory(keyword || "(最新邮件)", instruction, emailCount, queryId);
+                    saveToHistory(keyword || i18n.t("js.history_latest_keyword"), instruction, emailCount, queryId);
                     const tsKey = sessionEmail ? "last_email_process_time:" + sessionEmail : "last_email_process_time";
                     localStorage.setItem(tsKey, new Date().toISOString());
 
@@ -6142,15 +6202,15 @@
                     setTimeout(() => hideProgress(), 1800);
                     setTimeout(() => entry.scrollIntoView({ behavior: "smooth", block: "start" }), 280);
                 } else {
-                    setProgressStage("connecting", data.message || "执行失败");
+                    setProgressStage("connecting", data.message || i18n.t("js.exec_fail"));
                     document.getElementById("progressDetail").style.animation = "none";
-                    showToast("执行失败: " + (data.message || "未知错误"));
+                    showToast(i18n.t("js.exec_fail_toast") + (data.message || ""));
                 }
             } catch (e) {
                 stopStatusPolling();
-                setProgressStage("connecting", "网络请求错误");
+                setProgressStage("connecting", i18n.t("js.network_error"));
                 document.getElementById("progressDetail").style.animation = "none";
-                showToast("请求错误: " + e.message);
+                showToast(i18n.t("js.request_error") + e.message);
             } finally {
                 runBtn.disabled = false;
                 runBtn.classList.remove("loading");
@@ -6298,8 +6358,7 @@
                 el.textContent = t;
             } else {
                 el.classList.add("empty");
-                el.textContent =
-                    "暂无 AI 摘要（未配置 API Key 或 LLM 不可用）。仍可使用规则优先级、卡片与下方筛选。";
+                el.textContent = i18n.t("js.deep_no_ai_summary");
             }
         }
 
@@ -6314,7 +6373,7 @@
             const indices = data.top_priority_indices || [];
             if (!indices.length) {
                 el.innerHTML =
-                    '<p class="deep-pie-empty" style="padding:12px;margin:0;font-size:0.85rem">暂无优先级数据</p>';
+                    '<p class="deep-pie-empty" style="padding:12px;margin:0;font-size:0.85rem">' + i18n.t("js.deep_no_priority_data") + '</p>';
                 return;
             }
             indices.slice(0, 10).forEach(function (idx) {
@@ -6370,7 +6429,7 @@
             if (sortMode === "category") {
                 const byCat = {};
                 rows.forEach(function (row) {
-                    const c = row.category || "其他";
+                    const c = row.category || i18n.t("js.deep_other_category");
                     if (!byCat[c]) byCat[c] = [];
                     byCat[c].push(row);
                 });
@@ -6417,7 +6476,7 @@
             const el = document.getElementById("deepScanSelectedCount");
             if (!el || !window.deepScanData) return;
             const n = getFilteredDeepIndices().length;
-            el.textContent = "已选中 " + n + " 封（一次最多分析 " + DEEP_MAX_EMAILS + " 封）";
+            el.textContent = i18n.t("js.deep_selected_count", { n: n, max: DEEP_MAX_EMAILS });
         }
 
         function renderDeepScanUI(data) {
@@ -6477,7 +6536,7 @@
 
         async function runDeepScan() {
             if (currentCookieStatus !== "valid" && currentCookieStatus !== "warning") {
-                showToast("请先在上方连接校园邮箱并验证通过后，再执行深度扫描。");
+                showToast(i18n.t("js.deep_gate_scan"));
                 return;
             }
             const keyword = document.getElementById("keyword").value.trim();
@@ -6485,7 +6544,7 @@
             runBtn.disabled = true;
             runBtn.classList.add("loading");
             showProgress();
-            setProgressStage("connecting", "正在连接邮箱服务器...");
+            setProgressStage("connecting", i18n.t("js.connecting_server"));
             startStatusPolling();
             try {
                 const response = await fetch("/api/deep_scan", {
@@ -6497,18 +6556,18 @@
                 stopStatusPolling();
                 if (response.status === 409 || response.status === 403) {
                     setProgressStage("connecting", data.message || "");
-                    showToast(data.message || "无法执行");
+                    showToast(data.message || i18n.t("js.cannot_execute"));
                     return;
                 }
                 if (data.status === "cookie_expired") {
                     setProgressStage("searching", "");
-                    document.getElementById("progressDetail").textContent = "Cookie 已过期";
-                    showToast("Cookie 已过期，请在配置中更新");
+                    document.getElementById("progressDetail").textContent = i18n.t("js.cookie_expired_progress");
+                    showToast(i18n.t("js.cookie_expired_update"));
                     return;
                 }
                 if (data.status !== "success") {
-                    showToast(data.message || "深度扫描失败");
-                    setProgressStage("connecting", data.message || "失败");
+                    showToast(data.message || i18n.t("js.exec_fail"));
+                    setProgressStage("connecting", data.message || i18n.t("js.exec_fail"));
                     return;
                 }
                 window.deepScanData = data;
@@ -6524,24 +6583,20 @@
                     el.classList.add("completed");
                 });
                 document.getElementById("progressBarFill").style.width = "100%";
-                document.getElementById("progressDetail").textContent = "扫描完成";
+                document.getElementById("progressDetail").textContent = i18n.t("js.deep_scan_complete");
                 document.getElementById("progressDetail").style.animation = "none";
-                let doneMsg =
-                    "已扫描 " + data.list_count + " 封，请筛选后点击「分析选中的邮件」";
+                let doneMsg = i18n.t("js.deep_scanned_done", { n: data.list_count });
                 if (data.snapshot_saved && data.export_stem) {
-                    doneMsg +=
-                        " 已写入 deep_scan_exports/" +
-                        data.export_stem +
-                        ".json，饼图保存为同名 .png。";
+                    doneMsg += i18n.t("js.deep_snapshot_saved", { stem: data.export_stem });
                 } else if (data.export_stem && data.snapshot_saved === false) {
-                    doneMsg += " 快照 JSON 写入失败，请查看服务端日志。";
+                    doneMsg += i18n.t("js.deep_snapshot_fail");
                 }
                 showToast(doneMsg);
                 setTimeout(() => hideProgress(), 1800);
             } catch (e) {
                 stopStatusPolling();
-                setProgressStage("connecting", "网络请求错误");
-                showToast("请求错误: " + e.message);
+                setProgressStage("connecting", i18n.t("js.network_error"));
+                showToast(i18n.t("js.request_error") + e.message);
             } finally {
                 runBtn.disabled = false;
                 runBtn.classList.remove("loading");
@@ -6552,20 +6607,20 @@
 
         async function runAnalyzeSelected() {
             if (currentCookieStatus !== "valid" && currentCookieStatus !== "warning") {
-                showToast("请先在上方连接校园邮箱并验证通过后，再执行分析。");
+                showToast(i18n.t("js.deep_gate_analyze"));
                 return;
             }
             if (!window.deepScanData || !window.deepScanData.emails || !window.deepScanData.emails.length) {
-                showToast("请先完成一次深度扫描。");
+                showToast(i18n.t("js.deep_scan_first"));
                 return;
             }
             const indices = getFilteredDeepIndices();
             if (indices.length === 0) {
-                showToast("当前筛选下没有邮件，请调整类别或日期。");
+                showToast(i18n.t("js.deep_no_selection"));
                 return;
             }
             if (indices.length > DEEP_MAX_EMAILS) {
-                showToast("一次最多分析 " + DEEP_MAX_EMAILS + " 封，请缩小筛选范围（当前 " + indices.length + " 封）。");
+                showToast(i18n.t("js.deep_too_many", { max: DEEP_MAX_EMAILS, n: indices.length }));
                 return;
             }
             const keyword = document.getElementById("keyword").value.trim();
@@ -6578,7 +6633,7 @@
             analyzeBtn.disabled = true;
             analyzeBtn.classList.add("loading");
             showProgress();
-            setProgressStage("connecting", "正在连接邮箱服务器...");
+            setProgressStage("connecting", i18n.t("js.connecting_server"));
             startStatusPolling();
 
             try {
@@ -6600,7 +6655,7 @@
 
                 if (response.status === 409) {
                     setProgressStage("connecting", data.message || "");
-                    showToast(data.message || "请先完成邮箱连接");
+                    showToast(data.message || i18n.t("js.connect_first"));
                     return;
                 }
                 if (response.status === 400) {
@@ -6608,7 +6663,7 @@
                         data.message ||
                         (typeof data.detail === "string" ? data.detail : "") ||
                         (Array.isArray(data.detail) ? JSON.stringify(data.detail) : "") ||
-                        "请求无效";
+                        i18n.t("js.request_invalid");
                     setProgressStage("connecting", msg400);
                     showToast(msg400);
                     return;
@@ -6616,8 +6671,8 @@
 
                 if (data.status === "cookie_expired") {
                     setProgressStage("searching", "");
-                    document.getElementById("progressDetail").textContent = "Cookie 已过期";
-                    showToast("Cookie 已过期，请在配置中更新");
+                    document.getElementById("progressDetail").textContent = i18n.t("js.cookie_expired_progress");
+                    showToast(i18n.t("js.cookie_expired_update"));
                     return;
                 }
                 if (data.status === "success") {
@@ -6627,11 +6682,11 @@
                         el.classList.add("completed");
                     });
                     document.getElementById("progressBarFill").style.width = "100%";
-                    document.getElementById("progressDetail").textContent = "分析完成";
+                    document.getElementById("progressDetail").textContent = i18n.t("js.analysis_complete");
                     document.getElementById("progressDetail").style.animation = "none";
 
                     const queryId = generateQueryId();
-                    saveToHistory(keyword || "(深度筛选)", instruction, indices.length, queryId);
+                    saveToHistory(keyword || i18n.t("js.deep_filter_keyword"), instruction, indices.length, queryId);
                     const tsKey = sessionEmail ? "last_email_process_time:" + sessionEmail : "last_email_process_time";
                     localStorage.setItem(tsKey, new Date().toISOString());
 
@@ -6658,13 +6713,13 @@
                     setTimeout(() => hideProgress(), 1800);
                     setTimeout(() => entry.scrollIntoView({ behavior: "smooth", block: "start" }), 280);
                 } else {
-                    setProgressStage("connecting", data.message || "执行失败");
-                    showToast("执行失败: " + (data.message || "未知错误"));
+                    setProgressStage("connecting", data.message || i18n.t("js.exec_fail"));
+                    showToast(i18n.t("js.exec_fail_toast") + (data.message || ""));
                 }
             } catch (e) {
                 stopStatusPolling();
-                setProgressStage("connecting", "网络请求错误");
-                showToast("请求错误: " + e.message);
+                setProgressStage("connecting", i18n.t("js.network_error"));
+                showToast(i18n.t("js.request_error") + e.message);
             } finally {
                 analyzeBtn.disabled = false;
                 analyzeBtn.classList.remove("loading");
@@ -6674,14 +6729,14 @@
 
         async function devExtractSampleBodies() {
             if (currentCookieStatus !== "valid" && currentCookieStatus !== "warning") {
-                showToast("请先在上方连接校园邮箱并验证通过后再试。");
+                showToast(i18n.t("js.dev_gate"));
                 return;
             }
             const keyword = document.getElementById("keyword").value.trim();
             const btn = document.getElementById("devExtractBodiesBtn");
             const pre = document.getElementById("devExtractBodiesPre");
             btn.disabled = true;
-            pre.textContent = "正在深度拉取列表并提取全量正文（最多 100 封），请耐心等待……";
+            pre.textContent = i18n.t("js.dev_extracting");
             pre.classList.add("visible");
             try {
                 const response = await fetch("/api/dev/extract_sample_bodies", {
@@ -6693,29 +6748,29 @@
                 if (response.status === 409 || response.status === 403) {
                     pre.textContent = "";
                     pre.classList.remove("visible");
-                    showToast(data.message || "无法执行");
+                    showToast(data.message || i18n.t("js.cannot_execute"));
                     return;
                 }
                 if (data.status === "cookie_expired") {
-                    pre.textContent = data.message || "Cookie 已失效";
-                    showToast("Cookie 已过期或无法打开列表");
+                    pre.textContent = data.message || i18n.t("js.cookie_expired");
+                    showToast(i18n.t("js.cookie_invalid_toast"));
                     return;
                 }
                 if (data.status !== "success") {
                     pre.textContent = data.message || JSON.stringify(data, null, 2);
-                    showToast(data.message || "失败");
+                    showToast(data.message || i18n.t("js.exec_fail"));
                     return;
                 }
-                const head = "# " + (data.message || "") + "\n# 列表 " + data.list_count + " 封\n"
-                    + (data.output_file ? "# 已保存: src/" + data.output_file + "（JSON）\n" : "")
+                const head = "# " + (data.message || "") + "\n# " + data.list_count + "\n"
+                    + (data.output_file ? "# → src/" + data.output_file + "\n" : "")
                     + "\n";
                 pre.textContent = head + JSON.stringify(data.export || { samples: data.samples }, null, 2);
                 const nIdx = (data.indices && data.indices.length) || 0;
-                showToast("已提取 " + nIdx + " 封正文" + (data.output_file ? "，已写入 src/" + data.output_file : ""));
+                showToast(i18n.t("js.dev_extracted_count", { n: nIdx }) + (data.output_file ? " → src/" + data.output_file : ""));
                 pre.scrollIntoView({ behavior: "smooth", block: "nearest" });
             } catch (e) {
-                pre.textContent = "请求错误: " + e.message;
-                showToast("请求错误: " + e.message);
+                pre.textContent = i18n.t("js.request_error") + e.message;
+                showToast(i18n.t("js.request_error") + e.message);
             } finally {
                 btn.disabled = false;
             }
@@ -6723,7 +6778,7 @@
 
         async function devExtractDailyBodiesNoLlm() {
             if (currentCookieStatus !== "valid" && currentCookieStatus !== "warning") {
-                showToast("请先在上方连接校园邮箱并验证通过后再试。");
+                showToast(i18n.t("js.dev_gate"));
                 return;
             }
             const keyword = document.getElementById("keyword").value.trim();
@@ -6732,7 +6787,7 @@
             const btn = document.getElementById("devExtractDailyBtn");
             const pre = document.getElementById("devExtractDailyPre");
             btn.disabled = true;
-            pre.textContent = "正在按日常模式拉取列表并提取正文（不调 LLM），请稍候…";
+            pre.textContent = i18n.t("js.dev_daily_extracting");
             pre.classList.add("visible");
             try {
                 const response = await fetch("/api/dev/extract_daily_bodies_no_llm", {
@@ -6744,26 +6799,26 @@
                 if (response.status === 409 || response.status === 403) {
                     pre.textContent = "";
                     pre.classList.remove("visible");
-                    showToast(data.message || "无法执行");
+                    showToast(data.message || i18n.t("js.cannot_execute"));
                     return;
                 }
                 if (data.status === "cookie_expired") {
-                    pre.textContent = data.message || "Cookie 已失效";
-                    showToast("Cookie 已过期或无法打开列表");
+                    pre.textContent = data.message || i18n.t("js.cookie_expired");
+                    showToast(i18n.t("js.cookie_invalid_toast"));
                     return;
                 }
                 if (data.status !== "success") {
                     pre.textContent = data.message || JSON.stringify(data, null, 2);
-                    showToast(data.message || "失败");
+                    showToast(data.message || i18n.t("js.exec_fail"));
                     return;
                 }
                 pre.textContent = data.text || "";
                 const n = (data.items && data.items.length) || data.list_count || 0;
-                showToast("日常流已提取 " + n + " 封正文（未调用 LLM）");
+                showToast(i18n.t("js.dev_daily_done", { n: n }));
                 pre.scrollIntoView({ behavior: "smooth", block: "nearest" });
             } catch (e) {
-                pre.textContent = "请求错误: " + e.message;
-                showToast("请求错误: " + e.message);
+                pre.textContent = i18n.t("js.request_error") + e.message;
+                showToast(i18n.t("js.request_error") + e.message);
             } finally {
                 btn.disabled = false;
             }
@@ -6783,8 +6838,8 @@
 
             btn.disabled = true;
             icon.textContent = "...";
-            label.textContent = "检查中";
-            setCookiePill("检查中...", "warn");
+            label.textContent = i18n.t("js.cookie_checking");
+            setCookiePill(i18n.t("js.cookie_checking_pill"), "warn");
 
             try {
                 const response = await fetch("/api/check_cookie", {
@@ -6796,39 +6851,39 @@
                 if (data.status === "valid") {
                     currentCookieStatus = "valid";
                     icon.textContent = "OK";
-                    label.textContent = "Cookie 有效";
-                    setCookiePill("Cookie 有效", "ok");
-                    showToast("Cookie 验证通过");
+                    label.textContent = i18n.t("js.cookie_valid");
+                    setCookiePill(i18n.t("js.cookie_valid"), "ok");
+                    showToast(i18n.t("js.cookie_valid_toast"));
                 } else if (data.status === "warning") {
                     currentCookieStatus = "warning";
                     icon.textContent = "!";
-                    label.textContent = "已连接（需注意）";
-                    setCookiePill("已连接，见提示", "warn");
-                    showToast(data.message || "已进入邮箱，但检测有提示，仍可尝试分析。");
+                    label.textContent = i18n.t("js.cookie_connected_warn");
+                    setCookiePill(i18n.t("js.cookie_connected_warn_pill"), "warn");
+                    showToast(data.message || i18n.t("js.cookie_connected_warn"));
                 } else if (data.status === "invalid") {
                     currentCookieStatus = "invalid";
                     icon.textContent = "NO";
-                    label.textContent = "Cookie 失效";
-                    setCookiePill("Cookie 已失效", "bad");
-                    showToast("Cookie 已过期，请更新");
+                    label.textContent = i18n.t("js.cookie_expired");
+                    setCookiePill(i18n.t("js.cookie_expired_pill"), "bad");
+                    showToast(i18n.t("js.cookie_expired_toast"));
                 } else {
                     currentCookieStatus = "error";
                     icon.textContent = "ER";
-                    label.textContent = "状态异常";
-                    setCookiePill("状态异常", "warn");
-                    showToast(data.message || "状态异常");
+                    label.textContent = i18n.t("js.cookie_status_error");
+                    setCookiePill(i18n.t("js.cookie_status_error"), "warn");
+                    showToast(data.message || i18n.t("js.cookie_status_error"));
                 }
             } catch (e) {
                 icon.textContent = "ER";
-                label.textContent = "检查失败";
-                setCookiePill("检查失败", "bad");
-                showToast("请求错误: " + e.message);
+                label.textContent = i18n.t("js.cookie_check_fail");
+                setCookiePill(i18n.t("js.cookie_check_fail"), "bad");
+                showToast(i18n.t("js.request_error") + e.message);
             } finally {
                 btn.disabled = false;
                 refreshCommandPanelGate();
                 setTimeout(() => {
-                    icon.textContent = "验";
-                    label.textContent = "验证连接";
+                    icon.textContent = i18n.t("js.cookie_verify_icon");
+                    label.textContent = i18n.t("js.cookie_verify_label");
                 }, 4000);
             }
         }
@@ -6892,7 +6947,7 @@
             if (cookieTextarea.value.trim() !== jsonStr) {
                 cookieTextarea.value = jsonStr;
                 if (showConvertedToast) {
-                    showToast("已自动转换为 JSON 格式");
+                    showToast(i18n.t("js.cookie_auto_json"));
                 }
             }
             return jsonStr;
@@ -6960,7 +7015,7 @@
             if (!el) return;
             if (!items.length) {
                 el.innerHTML =
-                    '<div class="digest-empty">尚无定时摘要记录。开启并保存设置后，到达设定时间会自动生成。</div>';
+                    '<div class="digest-empty">' + i18n.t("digest.history_empty") + '</div>';
                 return;
             }
             el.innerHTML = items
@@ -7010,7 +7065,7 @@
             }
             try {
                 const res = await fetch("/api/digest/settings");
-                if (!res.ok) throw new Error("无法加载定时摘要设置");
+                if (!res.ok) throw new Error(i18n.t("js.digest_load_fail"));
                 const data = await res.json();
                 const d = data.digest || {};
                 const noteEl = document.getElementById("digestServerNote");
@@ -7032,7 +7087,7 @@
                 if (ins) {
                     ins.value =
                         d.instruction ||
-                        "请用自然语气总结这些邮件，重点关注活动、课程作业和重要事项。";
+                        i18n.t("js.digest_default_instruction");
                     if (typeof updatePresetActiveState === 'function') {
                         updatePresetActiveState("digestPromptPresets", "digestInstruction");
                     }
@@ -7096,8 +7151,8 @@
                     body: JSON.stringify(body),
                 });
                 const data = await res.json().catch(() => ({}));
-                if (!res.ok) throw new Error(data.message || "保存失败");
-                showToast("定时摘要设置已保存");
+                if (!res.ok) throw new Error(data.message || i18n.t("js.save_fail"));
+                showToast(i18n.t("js.digest_saved"));
                 await refreshDigestPanel();
             } catch (e) {
                 if (errEl) {
@@ -7107,17 +7162,20 @@
             }
         }
 
-        const PROMPT_PRESETS = [
-            { label: "📋 综合摘要", text: "请用自然语气总结这些邮件，重点关注活动、课程作业和重要事项。每封邮件的内容总结写充分：该封的关键信息、时间地点、需办事项尽量写全，不要为省字数过度压缩。" },
-            { label: "📝 详细展开", text: "请对每封邮件做充分展开的内容总结：分条列出要点，重要数字、日期、链接、联系人能保留则保留。语气自然，宁可稍长也不要遗漏。若某封与校园学习/生活无关，仍单独成块如实概括，不要一笔带过为空。" },
-            { label: "🎯 求职招聘", text: "请重点关注招聘、实习、校招、就业、career 相关的邮件。列出岗位名称、公司、截止日期和申请方式。其他类型的邮件简要提及即可。" },
-            { label: "📅 活动通知", text: "请重点关注校园活动、讲座、社团活动、比赛、学术会议相关的邮件。列出活动名称、时间、地点和报名方式。非活动类邮件简述即可。" },
-            { label: "📚 课程作业", text: "请重点关注课程通知、作业截止、考试安排、成绩发布、补选退课相关的邮件。按紧急程度排序，标注每个 deadline。不相关的邮件简要提及。" },
-            { label: "⏰ Deadline 提取", text: "请从这些邮件中提取所有含有截止日期、报名截止、缴费期限、提交期限的事项。按时间先后排列，格式为：事项名称 | 截止时间 | 来源邮件主题。没有明确时限的邮件可忽略。" },
-            { label: "🏫 教务行政", text: "请重点关注来自学校行政部门（注册中心、教务处、学生事务、财务等）的邮件。提取政策变更、办理流程、必要操作步骤。非行政类邮件简述即可。" },
-            { label: "🌐 英文翻译", text: "请将所有英文邮件翻译为中文后再做摘要。对中文邮件直接总结。每封邮件标注原文语言。重点关注需要回复或行动的事项。" },
-            { label: "🔔 需行动/回复", text: "请从这些邮件中筛选出需要我本人回复、操作或参与的事项。忽略纯通知类、广告类邮件。对需要行动的邮件，明确列出：我需要做什么、截止什么时候、如何操作。" }
-        ];
+        function getPromptPresets() {
+            return [
+                { label: i18n.t("js.preset_general"), text: i18n.t("js.preset_general_text") },
+                { label: i18n.t("js.preset_detailed"), text: i18n.t("js.preset_detailed_text") },
+                { label: i18n.t("js.preset_jobs"), text: i18n.t("js.preset_jobs_text") },
+                { label: i18n.t("js.preset_events"), text: i18n.t("js.preset_events_text") },
+                { label: i18n.t("js.preset_courses"), text: i18n.t("js.preset_courses_text") },
+                { label: i18n.t("js.preset_deadlines"), text: i18n.t("js.preset_deadlines_text") },
+                { label: i18n.t("js.preset_admin"), text: i18n.t("js.preset_admin_text") },
+                { label: i18n.t("js.preset_translate"), text: i18n.t("js.preset_translate_text") },
+                { label: i18n.t("js.preset_action"), text: i18n.t("js.preset_action_text") }
+            ];
+        }
+        let PROMPT_PRESETS = getPromptPresets();
 
         function updatePresetActiveState(containerId, textareaId) {
             const container = document.getElementById(containerId);
@@ -7172,7 +7230,7 @@
             const customBtn = document.createElement("button");
             customBtn.type = "button";
             customBtn.className = "prompt-preset-pill";
-            customBtn.textContent = "✏️ 自定义";
+            customBtn.textContent = i18n.t("js.preset_custom");
             customBtn.onclick = () => {
                 textarea.value = "";
                 updatePresetActiveState(containerId, textareaId);
@@ -7190,9 +7248,18 @@
         }
 
         function initPromptPresets() {
+            PROMPT_PRESETS = getPromptPresets();
             renderPromptPresets("mainPromptPresets", "instruction");
             renderPromptPresets("digestPromptPresets", "digestInstruction");
         }
+
+        window.addEventListener("langchange", () => {
+            PROMPT_PRESETS = getPromptPresets();
+            initPromptPresets();
+            renderHistory();
+            updateDeepScanFilterCount();
+            refreshCommandPanelGate();
+        });
 
         (async function bootstrap() {
             await initUserSession();
