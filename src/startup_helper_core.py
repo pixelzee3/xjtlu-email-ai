@@ -28,12 +28,12 @@ def requirements_path() -> Path:
 PIP_TO_IMPORT: dict[str, str] = {
     "fastapi": "fastapi",
     "uvicorn": "uvicorn",
+    "pydantic": "pydantic",
     "jinja2": "jinja2",
     "playwright": "playwright",
     "requests": "requests",
     "beautifulsoup4": "bs4",
     "python-dotenv": "dotenv",
-    "streamlit": "streamlit",
     "bcrypt": "bcrypt",
     "itsdangerous": "itsdangerous",
 }
