@@ -339,6 +339,7 @@
 
   "js.summary_label_title": "邮件标题",
   "js.summary_label_sender": "发件人",
+  "js.summary_label_sent_date": "发件日期",
   "js.summary_label_summary": "内容总结",
   "js.summary_label_importance": "重要程度",
   "js.summary_star": "星",

@@ -339,6 +339,7 @@
 
   "js.summary_label_title": "Email Subject",
   "js.summary_label_sender": "Sender",
+  "js.summary_label_sent_date": "Sent Date",
   "js.summary_label_summary": "Summary",
   "js.summary_label_importance": "Importance",
   "js.summary_star": " star(s)",
